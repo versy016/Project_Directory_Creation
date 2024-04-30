@@ -1,0 +1,5 @@
+provider: github
+repo: project_directory_creation
+owner: versy016
+private: false # or true if your repo is private
+updaterCacheDirName: "Project_directory_Creation-updater-cache"

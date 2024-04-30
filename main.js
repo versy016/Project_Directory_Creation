@@ -23,10 +23,11 @@ autoUpdater.on('update-available', () => {
 
 });
 
-autoUpdater.on('update-downloaded', async () => {
-  autoUpdater.quitAndInstall(); // Will trigger application restart
-  
+autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+    // Optionally notify the user of an impending update
+    autoUpdater.quitAndInstall();  // This will quit the app and install the update
 });
+
 
 
 autoUpdater.on('update-not-available', () => {
@@ -64,10 +65,12 @@ function createWindow() {
 
 
 app.on('ready', async () => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV === 'development') {
     autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml');
-  }
- 
+} else {
+    autoUpdater.updateConfigPath = path.join(__dirname, 'app-update.yml');
+}
+
   autoUpdater.checkForUpdatesAndNotify();
 });
 

@@ -6,12 +6,14 @@
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder "
+    "dist": "cross-env NODE_ENV=production electron-builder --publish always",
+    "dist-dev": "cross-env NODE_ENV=development electron-builder"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "electron": "^30.0.0",
     "electron-builder": "^24.13.3"
   },
@@ -64,8 +66,7 @@
       "installerHeaderIcon": "pdc.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Project Directory Creation",
-      "differentialPackage": true
+      "shortcutName": "Project Directory Creation"
     }
   }
 }
