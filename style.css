@@ -1,0 +1,566 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f8f8;
+}
+
+h1 {
+  color: #333;
+  text-align: center;
+}
+.open-folder-btn {
+    padding: 5px 10px; /* Small padding */
+    font-size: 12px; /* Smaller font size */
+    background-color: #3F51B5; /* Grey background */
+    color: white; /* White text color */
+    border: none; /* Remove border */
+    border-radius: 4px; /* Optional: rounded corners */
+    cursor: pointer; /* Change cursor to pointer on hover */
+    transition: background-color 0.3s ease; /* Smooth background color transition on hover */
+}
+
+.open-folder-btn:hover {
+    background-color: #696969; /* Slightly darker grey on hover */
+}
+
+form {
+  max-width: 600px;
+  margin:  auto;
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+table {
+  width: 100%;
+}
+
+td {
+  padding: 8px;
+  vertical-align: middle;
+}
+
+/* Style for the input field */
+input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  margin: 6px 0;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* General style for the radio buttons and associated labels */
+input[type="radio"] {
+  margin-right: 8px;
+}
+
+label {
+  margin-right: 20px;
+  cursor: pointer;
+  user-select: none; /* this will prevent text from being selectable, better UX */
+}
+
+/* Styles for the dropdown content */
+
+.refNumPrefixDropdown{
+    width: 50%;
+}
+
+/* Clearfix */
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+/* This will ensure that dropdown is shown when there are items */
+.dropdown-content.show {
+  display: block;
+}
+/* styles.css */
+/* 
+.dropdown-content {
+    border-top: none;
+    position: absolute;
+    z-index: 1;
+    width: 25%;
+}
+
+.dropdown-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dropdown-content ul li {
+    padding: 8px;
+    cursor: pointer;
+    background-color: white;
+    width: 250%;
+}
+
+.dropdown-content ul li:hover {
+    background-color: #f0f0f0;
+}
+
+.dropdown-content ul li.focused {
+    background-color: #e9e9e9;
+} */
+.projects-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    gap: 20px; /* Add some space between columns */
+}
+
+.project-column {
+    flex: 1; /* Each column takes equal width */
+    background-color: #fff;
+    padding: 7px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-column h3 {
+    color: #333;
+    margin-bottom: 40px;
+    text-align: center;
+    font-size: 1.25em;
+}
+
+.project-list {
+    border-top: 2px solid #ddd;
+    padding-top: 10px;
+    max-height: 300px; /* Set a max height for scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.project-list div.project-item {
+    background-color: #f9f9f9;
+    margin-bottom: 8px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.project-list div.project-item:hover {
+    background-color: #eceff1;
+}
+
+.project-item span {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.project-item .project-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.project-actions span {
+    cursor: pointer;
+    color: #333;
+}
+
+.project-actions span:hover {
+    color: #000;
+}
+
+/* Style for the Copy, Sync, Direction icons/buttons */
+.project-actions .icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Example icon classes */
+.icon-copy { background-image: url('icons/copy.png'); }
+.icon-sync { background-image: url('icons/sync.png'); }
+.icon-direction { background-image: url('icons/direction.png'); }
+
+/* Scrollbar styles for project list */
+.project-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.project-list::-webkit-scrollbar-track {
+    background: #e1e1e1;
+}
+
+.project-list::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+.project-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.project-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px; /* Space between header and table */
+}
+
+.project-table thead th {
+    background-color: #f2f2f2;
+    color: #333;
+    font-weight: normal;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #ccc;
+}
+
+.project-table tbody td {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+/* Add alternating row colors for tbody */
+.project-table tbody tr:nth-child(odd) {
+    background-color: #fafafa;
+}
+
+.project-table tbody tr:nth-child(even) {
+    background-color: #efefef;
+}
+
+/* Add styles for the action icons */
+.project-action-icon {
+    display: inline-block;
+    cursor: pointer;
+    /* Add your icon backgrounds here, example: */
+    /* background-image: url('path-to-your-icon.png'); */
+    width: 16px; /* Your icon width */
+    height: 16px; /* Your icon height */
+    margin-right: 5px;
+}
+button {
+    padding: 8px 15px;
+    margin-left: 5px;
+    background-color: #5C6BC0; /* Example color */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #3F51B5; /* Darker shade for hover state */
+  }
+  /* ... existing CSS ... */
+
+#directionControls {
+    /* Additional styles for your direction controls container */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%; /* Take full height of the column */
+}
+
+#directionSelect {
+    padding: 5px 10px;
+    margin-top: 10px; /* Space from the Direction header */
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    text-align: center;
+}
+.direction-dropdown {
+    width: 50px; /* Set a fixed width for the dropdown */
+    margin-right: 1rem;
+}
+.direction-column{
+    margin-top: 6rem;
+
+}
+.direction-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 47px; /* Adjust this to match the height of your project rows */
+}
+
+.project-table {
+    margin-bottom: 0; /* Remove margin to align with direction dropdowns */
+}
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgb(0,0,0); 
+    background-color: rgba(0,0,0,0.4); 
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; 
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; 
+}
+
+.close, .closebtn, .closecopymenu {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus, 
+.closebtn:focus, 
+.closebtn:hover, 
+.closecopymenu:focus, 
+.closecopymenu:hover  {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+.drive-container {
+    float: left;
+    width: 50%;
+    box-sizing: border-box;
+    padding: 0 10px;
+}
+
+/* Clear fix */
+#subfoldersContainer::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+/* Hide the new client form initially */
+.hidden {
+    display: none;
+}
+
+.client-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-section {
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+}
+
+.form-section legend {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.clientlabel {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+.clientselect {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+/* button[type="button"] {
+    background-color: #6c757d;
+} */
+
+button:hover {
+    opacity: 0.9;
+}
+
+.form-actions {
+    text-align: right;
+}
+
+.contact-dropdown-content {
+    font-size: 0.8em; /* Decreases the font size */
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    max-height: 200px; /* Set a max-height for your dropdown */
+    overflow-y: auto; /* Adds a scrollbar when content exceeds max-height */
+}
+
+.contact-dropdown-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.contact-dropdown-content li {
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+.contact-dropdown-content li:hover {
+    background-color: #f0f0f0;
+}
+
+.contact-dropdown-content li .name {
+    font-weight: bold;
+    font-size: 1.2em; /* Makes the name larger and bolder */
+}
+
+.contact-dropdown-content li .email,
+.contact-dropdown-content li .phone {
+    font-size: 0.8em; /* Smaller font size for email and phone */
+}
+.dropdown-content {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    max-height: 400px;
+    overflow-y: auto;
+    position: absolute;
+    width: 50%;
+    z-index: 1000;
+    margin-top: 1px;
+}
+.dropdown-content ul {
+    list-style-type: none;
+    /* Removes default list styling */
+    margin: 0;
+    padding: 0;
+}
+
+/* Style for each item within the list */
+.dropdown-content li {
+    padding: 10px;
+    /* Adds some space around the text */
+    cursor: pointer;
+    /* Changes cursor to pointer on hover */
+    border-bottom: 1px solid #f0f0f0;
+    /* Adds a separator between items */
+}
+
+/* Changes background color of list items on hover */
+.dropdown-content li:hover {
+    background-color: #f0f0f0;
+}
+
+/* Style to hide the scrollbar but allow scrolling */
+.dropdown-content::-webkit-scrollbar {
+    display: none;
+    /* For Webkit browsers */
+}
+
+.dropdown-content {
+    -ms-overflow-style: none;
+    /* For Internet Explorer and Edge */
+    scrollbar-width: none;
+    /* For Firefox */
+}
+#newProjectNameDropdown.disabled {
+    /* Styles for the disabled state */
+    background-color: #e0e0e0;
+    color: #a0a0a0;
+    cursor: not-allowed;
+}
+.info-icon-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    z-index: 1001;
+    /* Higher than other page elements */
+}
+
+.modal {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1000;
+    /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgb(0, 0, 0);
+    /* Fallback color */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    /* Could be more or less, depending on screen size */
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+.info-icon-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1001;
+    /* Ensure it's on top of other content */
+}
+
+#infoIcon {
+    fill: currentColor;
+    /* Use the text color for the icon's fill */
+    color: #333;
+    /* Dark grey color, change as needed */
+    cursor: pointer;
+    /* Indicates that the icon is clickable */
+}

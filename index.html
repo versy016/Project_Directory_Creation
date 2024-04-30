@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://*.algolia.net https://*.algolianet.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline';">
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA2RLWM9BIM_PyX-pxJKh8pjfOmHtPzTUE&libraries=places&callback=initAutocomplete"
+        async defer></script>
+    <title>Project Directory Creation</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+</head>
+
+<body>
+    <div class="info-icon-container">
+        <svg id="infoIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"
+            fill="#000000">
+            <path
+                d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+        </svg>
+
+    </div>
+
+    <!-- Information Modal -->
+    <p>Version 1.0.0</p>
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Information</h2>
+            <h1>Tool Information Guide</h1>
+
+            <h2>1. Client and Project Folder Structure Requirements</h2>
+            <ul>
+                <li>
+                    <strong>Client Folder Path:</strong>
+                    <p>Ensure that each client's folder is structured according to the specific path:
+                        <code>C:\_Clients\<clientname></code>. This standardization helps in maintaining uniformity and
+                        ease of
+                        navigation within the file system.
+                    </p>
+                </li>
+                <li>
+                    <strong>Quotes Folder Path (For Authorized Quotes Team Users):</strong>
+                    <p>The folder path for quotes should follow this format:
+                        <code>C:\__Accounts\__Clients\<clientname></code>. This
+                        path is designated for the Quotes team to facilitate organized access to client quote files.
+                    </p>
+                </li>
+            </ul>
+
+            <h2>2. Project and Quote Creation Options</h2>
+            <ul>
+                <li>
+                    <strong>Project Type Selection:</strong>
+                    <p>When creating a project, users have the option to select the type of project they are initiating.
+                        This could
+                        include options such as client projects or quote directories. The tool provides flexibility in
+                        handling
+                        different types of project requirements.</p>
+                </li>
+                <li>
+                    <strong>Searching and Picking from Tender List:</strong>
+                    <p>Users can search and select from a pre-existing list of tenders. This feature facilitates the
+                        reuse of
+                        existing templates or project parameters, speeding up the project setup process.</p>
+                </li>
+                <li>
+                    <strong>Manual Entry with Year Prefix:</strong>
+                    <p>If the desired project or tender is not listed, users have the option to manually enter the
+                        project name with
+                        a prefix that includes the current year (e.g., 2024-ProjectName). This helps in keeping records
+                        chronological and organized.</p>
+                </li>
+            </ul>
+
+            <h2>3. Transactional Folder Options</h2>
+            <ul>
+                <li>
+                    <strong>Trans In and Trans Out Folders:</strong>
+                    <p>Users can opt to create <code>Trans In</code> and <code>Trans Out</code> folders associated with
+                        a project.
+                        These folders are used for managing incoming and outgoing transactions or documents related to
+                        the project.
+                    </p>
+                </li>
+                <li>
+                    <strong>Choosing Dates for Transaction Folders:</strong>
+                    <p>While the default setup uses the current date for these folders, users can customize this by
+                        selecting
+                        specific dates. This flexibility is useful for back-dating or future-dating project
+                        documentation as
+                        required.</p>
+                </li>
+            </ul>
+
+            <h2>4. Additional Functionalities</h2>
+            <ul>
+                <li>
+                    <strong>Dynamic Year Prefix Handling:</strong>
+                    <p>The tool automatically handles the year prefix for new projects based on the system's current
+                        date, which
+                        ensures consistency and reduces manual errors.</p>
+                </li>
+                <li>
+                    <strong>Customizable Folder Paths for Special Cases:</strong>
+                    <p>For projects that require unique handling or categorization, users have the option to manually
+                        specify and
+                        customize the folder paths, going beyond the standard <code>Trans In</code> and
+                        <code>Trans Out</code>
+                        configurations.
+                    </p>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <h1>Project Directory Creation</h1>
+    <div id="newProjectForm" class="modal">
+        <form class="modal-content">
+            <span class="close">&times;</span>
+            <input type="text" id="clientInput1" placeholder="Search for a client">
+            <div id="clientDropdown1" class="dropdown-content"></div>
+            <button type="button" id="searchclientButton">Search</button>
+            <h4 id="subfoldersHeading" style="display: none;">Projects:</h4>
+
+            <div id="subfoldersContainer">
+                <div class="drive-container">
+                    <h4 id="subfoldersHeadingC" style="display: none;">C Drive Projects:</h4>
+                    <div id="subfoldersContainerC"></div>
+                </div>
+                <div class="drive-container">
+                    <h4 id="subfoldersHeadingG" style="display: none;">G Drive Projects:</h4>
+                    <div id="subfoldersContainerG"></div>
+                </div>
+            </div>
+
+            <!-- The Modal -->
+            <div id="myModal" class="modal">
+                <!-- Modal content -->
+                <div class="modal-content">
+                    <span class="closebtn">&times;</span>
+                    <p id="clientMessage"></p>
+                    <button type="button" id="createClientButton">Create Client</button>
+                </div>
+            </div>
+
+
+        </form>
+    </div>
+
+    <form>
+        <table>
+            <tr>
+                <td>Type:</td>
+                <td>
+                    <div>
+                        <label>
+                            <input type="radio" name="creationType" value="clientProject" checked>
+                            Client Project
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="radio" name="creationType" value="quoteDirectory">
+                            Quote Directory
+                        </label>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>Client:</td>
+                <td>
+                    <input type="text" id="clientInput" placeholder="Start typing client reference...">
+                    <button type="button" id="searchButton">Search</button>
+                    <button type="button" id="newProjectButton">Create New Project</button>
+                    <button type="button" id="createNewClientButton">Create New Client</button>
+                    <div id="clientDropdown" class="dropdown-content"></div>
+                </td>
+            </tr>
+            <tr id="newProjectSection" style="display: none;">
+                <td colspan="2">
+                    <label id="newProjectNameid" for="newProjectName">New Project Name:</label>
+                    <input type="text" id="newProjectName" name="newProjectName" placeholder="Start typing project name"
+                        maxlength="50">
+                    <div id="newProjectNameDropdown" class="dropdown-content">
+                        <!-- Dropdown content here -->
+                    </div>
+                    <a href="#" id="enterManually">Enter Manually (YYYY Prefix)</a>
+                    <a href="#" id="SearchProject" style="display:none; margin-bottom: 3rem;">Search Project</a>
+
+                    <div id="projecttypes" style=" margin-top: 1rem">Project Type:
+                        <div>
+                            <input type="radio" id="standard" name="projectType" value="Standard" checked>
+                            <label for="standard">Standard</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="dit" name="projectType" value="DIT">
+                            <label for="dit">DIT</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="rpas" name="projectType" value="RPAS">
+                            <label for="rpas">RPAS</label>
+                        </div>
+                    </div>
+                    <div id="checkboxWrapper" style=" margin-top: 1rem;">
+                        <input type="checkbox" id="createtransin" name="createtransin">
+                        <label for="createtransin"> Create
+                            <span id="datePlaceholder"> </span>  folder in  TransIn
+                        </label>
+                        <a href="#" id="entertransinManually">Enter Manually</a>
+                        <input type="date" id="datePickerTransIn" style="display: none;" />
+
+                    </div>
+                    <div id="checkboxWrapper">
+                        <input type="checkbox" id="createtransout" name="createtransout">
+                        <label for="createtranout"> Create
+                            <span id="datePlaceholder1"> </span>  folder in  TransOut
+                        </label>
+                        <a href="#" id="entertransoutManually">Enter Manually</a>
+                        <input type="date" id="datePickerTransOut" style="display: none;" />
+
+                    </div>
+                    <div id="checkboxcopytransin" style="display: none;">
+                        <input type="checkbox" id="copytransin" name="copytransin">
+                        <label for="copytransin"> Copy transIn from the Quote
+                        </label>
+                    </div>
+                    <div id="checkboxcopyohs" style="display: none;">
+                        <input type="checkbox" id="copyohs" name="copyohs">
+                        <label for="copyohs"> Copy OHS from the Quote
+                        </label>
+                    </div>
+                    <div style=" margin-top: 1rem;">
+                        <input type="checkbox" id="copyToGDrive" name="copyToGDrive" checked>
+                        <label for="copyToGDrive">Copy project to G Drive?</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="createSyncFolderPair" name="createSyncFolderPair" checked>
+                        <label for="createSyncFolderPair">Create Sync Folder Pair?</label>
+                    </div>
+                    <div class="newdirection-cell" id="directioncell" style=" margin-left: 10px;">
+                        <select class="newdirection-dropdown" style="width: 150px;">
+                            <option value="default">Select Sync Type</option>
+                            <option value="Update Right" selected>Sync C To G</option>
+                            <option value="Update LEft">Sync G To C</option>
+                            <option value="Update Both">Sync Both</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button type="button" id="btnSubmit">Submit</button>
+                        <button type="button" id="hideNewProjectSectionButton">Hide</button>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <div id="newClientForm" class="client-form hidden">
+                    <!-- Properties Section -->
+                    <fieldset class="form-section">
+                        <legend>Properties</legend>
+                        <label class="clientlabel" for="clientName">Name:</label>
+                        <input type="text" id="clientName" placeholder="Enter client name">
+
+                        <label class="clientlabel" for="esReference">ES Reference:</label>
+                        <input type="text" id="esReference" placeholder="Enter ES Reference">
+
+                        <label class="clientlabel" for="clientType">Type:</label>
+                        <select class="clientselect" id="clientType">
+                            <option value="Company">Company</option>
+                            <option value="Individual">Individual</option>
+
+                            <!-- Add other types as necessary -->
+                        </select>
+
+                        <label class="clientlabel" for="isActive">Active?</label>
+                        <input type="checkbox" id="isActive" checked>
+                    </fieldset>
+
+                    <!-- Contact Section -->
+                    <fieldset class="form-section" id="contactSection">
+                        <legend>Contact</legend>
+
+                        <label class="clientlabel" for="linkedContact">Linked Contact:</label>
+                        <input type="text" id="linkedContact" placeholder="Start typing...">
+                        <div id="contactDropdown" class="contact-dropdown-content"></div>
+
+                        <label class="clientlabel" for="contactName">Contact Name:</label>
+                        <input type="text" id="contactName" placeholder="Enter contact name">
+
+                        <label class="clientlabel" for="emailAddress">Email Address:</label>
+                        <input type="email" id="emailAddress" placeholder="Enter email address">
+
+                        <label class="clientlabel" for="phoneNumber">Phone Number:</label>
+                        <input type="tel" id="phoneNumber" placeholder="Enter phone number">
+                        <input type="hidden" id="contactId" value="">
+
+                        <label class="clientlabel" for="sendToMailChimp">Send to MailChimp?<input type="checkbox"
+                                id="sendToMailChimp">
+                            <div class="spacer" style="width: 8px;"></div>
+
+                            <label class="clientlabel" for="CreateContact">Create a New Contact?<input type="checkbox"
+                                    id="CreateContact">
+
+                            </label>
+
+
+                    </fieldset>
+
+
+                    <!-- Address Section -->
+                    <fieldset class="form-section">
+                        <legend>Address</legend>
+
+                        <label for="address">Address:</label>
+                        <input type="text" id="address" placeholder="Enter address" autocomplete="off">
+                        <div id="suggestions"></div>
+
+                        <label for="addressCont">Address (cont):</label>
+                        <input type="text" id="addressCont" placeholder="Continue address">
+
+                        <label for="suburb">Suburb:</label>
+                        <input type="text" id="suburb" placeholder="Enter suburb">
+
+                        <label for="state">State:</label>
+                        <select class="clientselect" id="state">
+                            <option value="ACT">ACT</option>
+                            <option value="NT">Northern Territory</option>
+                            <option value="NSW">New South Wales</option>
+                            <option value="SA" selected>South Australia</option>
+                            <option value="WA">Western Australia</option>
+                            <option value="VIC">Victoria </option>
+                            <option value="QSD">Queensland</option>
+                            <option value="TAS">Tasmania</option>
+                        </select>
+
+                        <label for="postcode">Postcode:</label>
+                        <input type="text" id="postcode" placeholder="Enter postcode">
+                    </fieldset>
+                    <div class="form-actions">
+                        <button type="submit" id="submitClientForm">Submit</button>
+                        <button type="button" id="closeClientFormButton">Close Form</button>
+                    </div>
+                </div>
+            </tr>
+        </table>
+    </form>
+
+    <div id="existingProjectsContainer" style="padding: 20px;">
+        <h2 id="Heading">Existing Projects:</h2>
+        <div class="projects-container">
+            <div class="project-column c-drive">
+                <h3 id="cDriveHeading">C Drive Projects</h3>
+                <table class="project-table" id="cDriveTable">
+                    <!-- <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Copy</th>
+                    </tr>
+                </thead> -->
+                    <tbody id="cDriveProjects">
+                        <!-- C Drive projects will be listed here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="direction-column" id="directionColumn">
+                <!-- Direction Dropdowns will be populated here -->
+
+            </div>
+            <div class="project-column g-drive">
+                <h3 id="gDriveHeading">G Drive Projects</h3>
+                <table class="project-table" id="gDriveTable">
+                    <!-- <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Copy</th>
+                    </tr>
+                </thead> -->
+                    <tbody id="gDriveProjects">
+                        <!-- G Drive projects will be listed here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- Custom Modal for Selecting Projects to Copy -->
+    <div id="copyProjectsModal" class="modal">
+        <div class="modal-content">
+            <span class="closecopymenu">&times;</span>
+            <h2>Select Projects to Copy from C drive to G drive</h2>
+            <div id="copyProjectsList"></div>
+            <button id="confirmCopyButton">Copy Selected Projects</button>
+            <button id="skipButton">Skip</button>
+
+        </div>
+    </div>
+    <div id="runsyncmodal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="closerunsyncmodal">&times;</span>
+            <p>Folder Pairs have been created.</p>
+            <button id="openFile">Open File</button>
+            <button id="cancel">Cancel</button>
+        </div>
+    </div>
+    <div class="run-sync-container">
+        <button type="button" id="runSyncButton" style="margin-top: 1rem;">Create Folder Pairs</button>
+        <button type="button" id="openfile" style="margin-top: 1rem;">Open FreefileSync</button>
+        <button type="button" id="refresh" style="margin-top: 1rem;">Refresh</button>
+
+    </div>
+
+    <!-- Include your JavaScript file -->
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Event listener for the 'Create New Client' button
+            document.getElementById('createNewClientButton').addEventListener('click', function () {
+                // Remove the 'hidden' class to show the form
+                document.getElementById('newClientForm').classList.remove('hidden');
+            });
+
+            // Event listener for the 'Close Form' button
+            document.getElementById('closeClientFormButton').addEventListener('click', function () {
+                // Add the 'hidden' class to hide the form
+                document.getElementById('newClientForm').classList.add('hidden');
+            });
+            var infoIcon = document.getElementById('infoIcon');
+            var infoModal = document.getElementById('infoModal');
+            var closeButton = infoModal.getElementsByClassName('close')[0];
+
+            // Function to open modal
+            infoIcon.onclick = function () {
+                infoModal.style.display = "block";
+            }
+
+            // Function to close modal
+            closeButton.onclick = function () {
+                infoModal.style.display = "none";
+            }
+
+            // Close modal if outside click
+            window.onclick = function (event) {
+                if (event.target == infoModal) {
+                    infoModal.style.display = "none";
+                }
+            }
+        });
+    </script>
+    <script>
+        function initAutocomplete() {
+            const addressInput = document.getElementById('address');
+            const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+                types: ['address'],
+                componentRestrictions: { country: "au" }
+            });
+
+            autocomplete.addListener('place_changed', function () {
+                const place = autocomplete.getPlace();
+                if (!place.address_components) {
+                    window.alert("No details available for input: '" + place.name + "'");
+                    return;
+                }
+
+                // Populate the address fields.
+                for (var i = 0; i < place.address_components.length; i++) {
+                    var addressType = place.address_components[i].types[0];
+                    var val = place.address_components[i].long_name;
+                    var short_val = place.address_components[i].short_name; // For states, use short form
+
+                    // You may need to adjust the mappings below based on your input fields
+                    if (addressType === 'locality') {
+                        document.getElementById('suburb').value = val;
+                    } else if (addressType === 'administrative_area_level_1') {
+                        document.getElementById('state').value = short_val; // Assuming your options use short names
+                    } else if (addressType === 'postal_code') {
+                        document.getElementById('postcode').value = val;
+                    }
+                    // Add other fields and mappings as necessary
+                }
+            });
+        }
+        // Function to format and update date label
+        function updateDateLabel(date = new Date()) {
+            const dd = String(date.getDate()).padStart(2, '0');
+            const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+            const yyyy = date.getFullYear(); // Use the full year
+
+            const formattedDate = `${yyyy}_${mm}_${dd}`; // Format changed to YYYY_MM_DD
+            document.getElementById('datePlaceholder').textContent = formattedDate;
+        }
+        function updateDateLabelout(date = new Date()) {
+            const dd = String(date.getDate()).padStart(2, '0');
+            const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+            const yyyy = date.getFullYear(); // Use the full year
+
+            const formattedDate = `${yyyy}_${mm}_${dd}`; // Format changed to YYYY_MM_DD
+            document.getElementById('datePlaceholder1').textContent = formattedDate;
+        }
+
+        // Call updateDateLabel initially to set the current date
+        updateDateLabel();
+        updateDateLabelout();
+        // Setup listeners for manual entry links
+        document.getElementById('entertransinManually').addEventListener('click', function () {
+            document.getElementById('datePickerTransIn').style.display = 'block';
+            document.getElementById('createtransin').checked = true;
+
+        });
+
+        document.getElementById('entertransoutManually').addEventListener('click', function () {
+            document.getElementById('datePickerTransOut').style.display = 'block';
+            document.getElementById('createtransout').checked = true;
+
+        });
+
+        // Setup listeners for date pickers to update the date label upon change
+        document.getElementById('datePickerTransIn').addEventListener('change', function () {
+            const selectedDate = new Date(this.value);
+            updateDateLabel(selectedDate);
+        });
+
+        document.getElementById('datePickerTransOut').addEventListener('change', function () {
+            const selectedDate = new Date(this.value);
+            updateDateLabelout(selectedDate);
+        });
+
+    </script>
+
+</body>
+
+</html>

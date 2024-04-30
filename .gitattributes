@@ -1,0 +1,2 @@
+dist/win-unpacked/Project_directory_Creation.exe filter=lfs diff=lfs merge=lfs -text
+dist/win-unpacked/Project-directory-Creation.exe filter=lfs diff=lfs merge=lfs -text
