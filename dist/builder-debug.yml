@@ -115,8 +115,8 @@ nsis:
     !macroend
 
     !addplugindir /x86-unicode "C:\Users\sverma\AppData\Local\electron-builder\Cache\nsis\nsis-resources-3.4.1\plugins\x86-unicode"
-    !include "C:\Users\sverma\AppData\Local\Temp\t-yq3Ng6\0-messages.nsh"
-    !include "C:\Users\sverma\AppData\Local\Temp\t-yq3Ng6\1-messages.nsh"
+    !include "C:\Users\sverma\AppData\Local\Temp\t-1KGKbG\0-messages.nsh"
+    !include "C:\Users\sverma\AppData\Local\Temp\t-1KGKbG\1-messages.nsh"
 
     Var newStartMenuLink
     Var oldStartMenuLink

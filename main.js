@@ -2,19 +2,19 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path'); // This line imports the 'path' module
 let copyingInProgressWindow = null;
 const fsExtra = require('fs-extra'); // Assuming fs-extra is required as fsExtra
-
-
-
 let mainWindow; 
 const { autoUpdater } = require('electron-updater');
 autoUpdater.logger = require("electron-log");
+
 autoUpdater.logger.transports.console.level = "info";
 
 autoUpdater.logger.transports.file.level = "info";
-
+autoUpdater.autoDownload = true; // Example of another option
+autoUpdater.disableWebInstaller = true; // Disable web installer
 autoUpdater.autoInstallOnAppQuit = true;
 
-autoUpdater.checkForUpdates();
+
+autoUpdater.checkForUpdatesAndNotify();
 console.log('Checking for update...');
 
 autoUpdater.on('update-available', () => {
