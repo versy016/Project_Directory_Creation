@@ -1,8 +1,8 @@
-version: 1.0.1
+version: 1.0.2
 files:
-  - url: Project_directory_Creation-Setup-1.0.1.exe
-    sha512: dfKdkR3C5NPZXIXUGTygqQLDgyvn7y/MtpINDZIL4lJUvGgPZHvqXC1JPCAN0F0+ac0KqUp3QJL1jCcMBRxG2Q==
-    size: 78917835
-path: Project_directory_Creation-Setup-1.0.1.exe
-sha512: dfKdkR3C5NPZXIXUGTygqQLDgyvn7y/MtpINDZIL4lJUvGgPZHvqXC1JPCAN0F0+ac0KqUp3QJL1jCcMBRxG2Q==
-releaseDate: '2024-04-30T04:08:41.240Z'
+  - url: Project_directory_Creation-Setup-1.0.2.exe
+    sha512: zjk9ERYCzXw5gvUrnz7cbJ1brLAaQQlaCMOnNhIoM9a21oYkkdyz/fpf3zgA9avgjDOZyVVIVMp8de992bGegA==
+    size: 78917895
+path: Project_directory_Creation-Setup-1.0.2.exe
+sha512: zjk9ERYCzXw5gvUrnz7cbJ1brLAaQQlaCMOnNhIoM9a21oYkkdyz/fpf3zgA9avgjDOZyVVIVMp8de992bGegA==
+releaseDate: '2024-04-30T06:14:24.048Z'
