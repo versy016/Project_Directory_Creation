@@ -14,6 +14,9 @@ ipcRenderer.on('update_available', () => {
   ipcRenderer.send('show-dialog', { type: 'info', message: 'A new update is available. Downloading now...' });
 });
 
+function refreshApp() {
+    ipcRenderer.send('refresh-app');
+}
 
 ipcRenderer.on('update_downloaded', () => {
   // Show confirm dialog to restart the application and install the update

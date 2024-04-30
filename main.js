@@ -102,6 +102,9 @@ ipcMain.on('show-confirm-dialog', (event, args) => {
 });
 
 
+ipcMain.on('refresh-app', (event) => {
+    mainWindow.reload();
+});
 
 // app.whenReady().then(createWindow);
 ipcMain.handle('show-message-box', async (event, options) => {

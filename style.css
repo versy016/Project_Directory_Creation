@@ -564,3 +564,19 @@ button:hover {
     cursor: pointer;
     /* Indicates that the icon is clickable */
 }
+.refresh-icon {
+    top: 10px;
+    left: 10px;
+    width: 30px;
+    /* Giving a fixed width */
+    height: 30px;
+    /* Giving a fixed height */
+    z-index: 10000;
+
+}
+
+.info-icon,
+.refresh-icon {
+    /* Space between icons */
+    cursor: pointer;
+}
