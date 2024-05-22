@@ -32,7 +32,7 @@
 
 
     <!-- Information Modal -->
-    <p>Version 1.0.3</p>
+    <p>Version 1.0.2</p>
 
     <div id="infoModal" class="modal">
         <div class="modal-content">
@@ -421,6 +421,28 @@
     <!-- Include your JavaScript file -->
     <script src="script.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const newProjectNameDropdown = document.getElementById('newProjectNameDropdown');
+            const newProjectNameInput = document.getElementById('newProjectName');
+
+            function closeDropdown(event) {
+                if (!newProjectNameDropdown.contains(event.target) && !newProjectNameInput.contains(event.target)) {
+                    newProjectNameDropdown.style.display = 'none';
+                }
+            }
+
+            document.addEventListener('click', closeDropdown);
+
+            newProjectNameInput.addEventListener('click', (event) => {
+                newProjectNameDropdown.style.display = 'block';
+                event.stopPropagation();
+            });
+
+            newProjectNameInput.addEventListener('input', (event) => {
+                newProjectNameDropdown.style.display = 'block';
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             // Event listener for the 'Create New Client' button
             document.getElementById('createNewClientButton').addEventListener('click', function () {

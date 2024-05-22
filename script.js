@@ -1001,49 +1001,94 @@ document.getElementById('btnSubmit').addEventListener('click', async (event) => 
 
         // Handle copying of TransIn directory based on checkbox state
         if (copyTransIn.checked) {
-
-            const transInSourceC = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'TransIn');
+            const transInSourcePrimary = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'TransIn');
+            const transInSourceSecondary = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients', clientName, newProjectName, 'TransIn');
             const transInDestinationC = path.join('C:\\_Clients', clientName, newProjectName, 'TransIn');
+
             try {
-                await fr.copy(transInSourceC, transInDestinationC);
-                console.log('TransIn files copied successfully to C Drive.');
-            } catch (error) {
-                console.error('Error copying TransIn files to C Drive:', error);
+                // Check if the primary source exists
+                await fs.promises.access(transInSourcePrimary);
+                // Primary source exists, use it
+                await fr.copy(transInSourcePrimary, transInDestinationC);
+                console.log('TransIn files copied successfully to C Drive from primary source.');
+            } catch (primaryError) {
+                console.error('Primary source unavailable, trying secondary source:', primaryError);
+
+                try {
+                    // Check if the secondary source exists
+                    await fs.promises.access(transInSourceSecondary);
+                    // Secondary source exists, use it
+                    await fr.copy(transInSourceSecondary, transInDestinationC);
+                    console.log('TransIn files copied successfully to C Drive from secondary source.');
+                } catch (secondaryError) {
+                    console.error('Error copying TransIn files from both sources:', secondaryError);
+                }
             }
-        }
+            }
 
         if (copyToGDriveCheckbox.checked && copyTransIn.checked) {
+            const transInSourcePrimary = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'TransIn');
+            const transInSourceSecondary = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients', clientName, newProjectName, 'TransIn');
+            const transInDestinationG = path.join('G:\\Shared drives\\ES Cloud\\_Clients', clientName, newProjectName, 'TransIn');
 
-            const transInSourceC = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'TransIn');
-            const transInDestinationG = path.join('G:\\Shared drives\\ES Cloud\\_Clients',clientName, newProjectName, 'TransIn');
             try {
-                await fr.copy(transInSourceC, transInDestinationG);
-                console.log('TransIn files copied successfully to G Drive.');
-            } catch (error) {
-                console.error('Error copying TransIn files to G Drive:', error);
+                await fs.promises.access(transInSourcePrimary);
+                await fr.copy(transInSourcePrimary, transInDestinationG);
+                console.log('TransIn files copied successfully to G Drive from primary source.');
+            } catch (primaryError) {
+                console.error('Primary source unavailable, trying secondary source:', primaryError);
+
+                try {
+                    await fs.promises.access(transInSourcePrimary);
+                    await fr.copy(transInSourceSecondary, transInDestinationG);
+                    console.log('TransIn files copied successfully to G Drive from secondary source.');
+                } catch (secondaryError) {
+                    console.error('Error copying TransIn files from both sources:', secondaryError);
+                }
             }
         }
         if (copyOHS.checked) {
+            const ohsSourcePrimary = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'OHS');
+            const ohsSourceSecondary = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients', clientName, newProjectName, 'OHS');
+            const ohsDestinationC = path.join('C:\\_Clients', clientName, newProjectName, 'OHS');
 
-            const transInSourceC = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'OHS');
-            const transInDestinationC = path.join('C:\\_Clients', clientName, newProjectName, 'OHS');
             try {
-                await fr.copy(transInSourceC, transInDestinationC);
-                console.log('TransIn files copied successfully to C Drive.');
-            } catch (error) {
-                console.error('Error copying TransIn files to C Drive:', error);
+                await fs.promises.access(ohsSourceSecondary);
+                await fr.copy(ohsSourcePrimary, ohsDestinationC);
+                console.log('OHS files copied successfully to C Drive from primary source.');
+            } catch (primaryError) {
+                console.error('Primary source unavailable, trying secondary source:', primaryError);
+
+                try {
+                    await fs.promises.access(ohsSourceSecondary);
+                    await fr.copy(ohsSourceSecondary, ohsDestinationC);
+                    console.log('OHS files copied successfully to C Drive from secondary source.');
+                } catch (secondaryError) {
+                    console.error('Error copying OHS files from both sources:', secondaryError);
+                }
             }
         }
 
-        if (copyToGDriveCheckbox.checked && copyOHS.checked) {
 
-            const transInSourceC = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'OHS');
-            const transInDestinationG = path.join('G:\\Shared drives\\ES Cloud\\_Clients',clientName, newProjectName, 'OHS');
+        if (copyToGDriveCheckbox.checked && copyOHS.checked) {
+            const ohsSourcePrimary = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'OHS');
+            const ohsSourceSecondary = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients', clientName, newProjectName, 'OHS');
+            const ohsDestinationG = path.join('G:\\Shared drives\\ES Cloud\\_Clients', clientName, newProjectName, 'OHS');
+
             try {
-                await fr.copy(transInSourceC, transInDestinationG);
-                console.log('TransIn files copied successfully to G Drive.');
-            } catch (error) {
-                console.error('Error copying TransIn files to G Drive:', error);
+                await fs.promises.access(ohsSourcePrimary);
+                await fr.copy(ohsSourcePrimary, ohsDestinationG);
+                console.log('OHS files copied successfully to G Drive from primary source.');
+            } catch (primaryError) {
+                console.error('Primary source unavailable, trying secondary source:', primaryError);
+
+                try {
+                    await fs.promises.access(ohsSourceSecondary);
+                    await fr.copy(ohsSourceSecondary, ohsDestinationG);
+                    console.log('OHS files copied successfully to G Drive from secondary source.');
+                } catch (secondaryError) {
+                    console.error('Error copying OHS files from both sources:', secondaryError);
+                }
             }
         }
 
@@ -1409,8 +1454,8 @@ function generateFolderPairsXml(clientName, projects, existingPairsSet) {
         if (selectedCreationType === 'clientProject') {
             if (project.direction === 'Update Both') {
                 // Use template literals correctly with backticks, not single quotes
-                leftPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;
-                rightPath = `C:\\_Clients\\${clientName}\\${project.name}`;
+                rightPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;
+                leftPath = `C:\\_Clients\\${clientName}\\${project.name}`;
             } else if (project.direction === 'Update Right') {
                 leftPath = `C:\\_Clients\\${clientName}\\${project.name}`;
                 rightPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;

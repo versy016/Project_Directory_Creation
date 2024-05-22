@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path'); // This line imports the 'path' module
 let copyingInProgressWindow = null;
-const fsExtra = require('fs-extra'); // Assuming fs-extra is required as fsExtra
+const fs = require('fs-extra'); // Assuming fs-extra is required as fsExtra
 let mainWindow; 
 const { autoUpdater } = require('electron-updater');
 autoUpdater.logger = require("electron-log");
@@ -72,6 +72,29 @@ app.on('ready', async () => {
 }
 
   autoUpdater.checkForUpdatesAndNotify();
+
+    const targetDir = 'C:\\Freefilesyncfiles'; // Define the target directory on the C: drive
+
+  // Ensure the directory exists
+  await fs.ensureDir(targetDir);
+
+  // Define the paths of the source files within the application directory
+  const appDir = path.dirname(app.getPath('exe'));
+  const sources = [
+    path.join(appDir, 'SyncSettings.ffs_gui'),
+    path.join(appDir, 'SyncSettings_Quotes.ffs_gui')
+  ];
+
+  // Copy each source file to the target directory if it does not already exist there
+  sources.forEach(async (source) => {
+    const filename = path.basename(source);
+    const targetPath = path.join(targetDir, filename);
+    if (!await fs.pathExists(targetPath)) {
+      await fs.copy(source, targetPath);
+    }
+  });
+
+
 });
 
 
@@ -117,7 +140,7 @@ ipcMain.handle('copy-directory', async (event, { projectName, fromPath, toPath }
     
     try {
         console.log(`Starting to copy project '${projectName}' from '${sourcePath}' to '${destinationPath}'...`);
-        await fsExtra.copy(sourcePath, destinationPath);
+        await fs.copy(sourcePath, destinationPath);
         console.log(`Project '${projectName}' has been successfully copied.`);
     } catch (error) {
         console.error(`Error copying project '${projectName}':`, error);

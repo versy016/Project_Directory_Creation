@@ -1,6 +1,6 @@
 {
   "name": "project_directory_creation",
-  "version": "1.0.3",
+  "version": "1.0.2",
   "description": "project directory creation tool for Engineering Surveys",
   "main": "main.js",
   "scripts": {
@@ -54,14 +54,16 @@
       "!tslint.json"
     ],
     "extraFiles": [
-        {
-          "_from": "G:/Shared drives/ES Cloud/_Admin/IT_Utilities/Development/Project_Directory_Creation/SyncSettings_Quotes.ffs_gui",
-          "_to": "C:/Freefilesyncfiles/SyncSettings_Quotes.ffs_gui"
-        },
-        {
-          "_from": "G:/Shared drives/ES Cloud/_Admin/IT_Utilities/Development/Project_Directory_Creation/SyncSettings.ffs_gui",
-          "_to": "C:/Freefilesyncfiles/SyncSettings.ffs_gui"
-        }
+      {
+        "from": "./SyncSettings_Quotes.ffs_gui",
+        "to": ".",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "./SyncSettings.ffs_gui",
+        "to": ".",
+        "filter": ["**/*"]
+      }
     ],
     "win": {
       "target": "nsis",
