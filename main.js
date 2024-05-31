@@ -107,6 +107,7 @@ ipcMain.on('show-dialog', (event, args) => {
     message: args.message,
     buttons: ['OK']
   });
+
 });
 
 ipcMain.on('show-confirm-dialog', (event, args) => {
@@ -129,8 +130,14 @@ ipcMain.on('refresh-app', (event) => {
     mainWindow.reload();
 });
 
-// app.whenReady().then(createWindow);
-ipcMain.handle('show-message-box', async (event, options) => {
+app.whenReady().then(() => {
+  const dirPath = 'G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients';
+  const exists = fs.existsSync(dirPath);
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('directory-existence', exists);
+  });
+  
+});ipcMain.handle('show-message-box', async (event, options) => {
   const response = await dialog.showMessageBox(options);
   return response;
 });

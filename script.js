@@ -10,6 +10,16 @@ const client = algoliasearch('ENGDR4U6W2', 'b999f6e45ff70ff80d4959d5e748d04c');
 const index = client.initIndex('Tenders');
 const { shell } = require('electron');
 
+
+ipcRenderer.on('directory-existence', (event, exists) => {
+  if (!exists) {
+    const quoteDiv = document.querySelector('.quotediv');
+    if (quoteDiv) {
+      quoteDiv.style.display = 'none';
+    }
+  }
+});
+
 ipcRenderer.on('update_available', () => {
   ipcRenderer.send('show-dialog', { type: 'info', message: 'A new update is available. Downloading now...' });
 });
