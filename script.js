@@ -19,7 +19,13 @@ ipcRenderer.on('directory-existence', (event, exists) => {
     }
   }
 });
-
+ipcRenderer.on('api-key', (event, apiKey) => {
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+});
 ipcRenderer.on('update_available', () => {
   ipcRenderer.send('show-dialog', { type: 'info', message: 'A new update is available. Downloading now...' });
 });

@@ -133,10 +133,16 @@ ipcMain.on('refresh-app', (event) => {
 app.whenReady().then(() => {
   const dirPath = 'G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients';
   const exists = fs.existsSync(dirPath);
+
+  const configPath = path.join(__dirname, 'config.json');
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  const apiKey = config.GOOGLE_MAPS_API_KEY;
+
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.send('directory-existence', exists);
+      mainWindow.webContents.send('directory-existence', exists);
+      mainWindow.webContents.send('api-key', apiKey);
   });
-  
+
 });ipcMain.handle('show-message-box', async (event, options) => {
   const response = await dialog.showMessageBox(options);
   return response;
