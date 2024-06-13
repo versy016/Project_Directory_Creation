@@ -1139,27 +1139,31 @@ window.onclick = function(event) {
     }
 };
 
-// Function to read the existing XML configuration and process it
 async function readAndProcessXmlConfig(filePath) {
     const xmlContent = await readExistingXmlConfig(filePath);
     if (!xmlContent) return [];
 
     try {
         const result = await parseStringPromise(xmlContent);
+        console.log("Parsed XML: ", result); // Debug: Log parsed XML to verify structure
 
         const folderPairs = result.FreeFileSync.FolderPairs[0].Pair;
         return folderPairs.map(pair => {
             const left = pair.Left[0];
             const right = pair.Right[0];
-            const variant = pair.Synchronize[0].Variant[0];
+            const differences = pair.Synchronize[0].Differences[0].$;
+            
+            console.log("Differences for pair: ", differences); // Debug: Log differences to verify values
 
-            // Determine the variant symbol
+            // Determine the variant based on the Differences attributes
             let variantSymbol = '';
-            if (variant === 'Update') {
-                variantSymbol = left.includes('C:\\') ? '>' : '<';
-            } else if (variant === 'TwoWay') {
-                variantSymbol = '<>';
+            if (differences.RightNewer === 'left' && differences.RightOnly === 'left') {
+                variantSymbol = '<>';  // Two-way
+            } else if (differences.RightNewer === 'none' && differences.RightOnly === 'none') {
+                variantSymbol = left.includes('C:\\') ? '>' : '<';  // Update
             }
+
+            console.log("Variant Symbol: ", variantSymbol); // Debug: Log determined variant
 
             // Find which path is the C drive and which is the G drive
             const cDriveProject = left.includes('C:\\') ? left : right;
@@ -1176,6 +1180,8 @@ async function readAndProcessXmlConfig(filePath) {
         return [];
     }
 }
+
+
 document.querySelectorAll('input[name="creationType"]').forEach((radio) => {
     radio.addEventListener('change', (event) => {
         console.log(event.target.value);
@@ -1385,6 +1391,7 @@ document.getElementById('gDriveTable').addEventListener('click', (event) => {
     }
 });
 function populateDirectionColumn(commonProjects, configData) {
+    console.log(configData);
     const directionElement = document.getElementById('directionColumn');
     
     if (directionElement) {
@@ -1407,6 +1414,7 @@ function populateDirectionColumn(commonProjects, configData) {
                 default: directionValue = ''; // Default value or placeholder if no config is found
             }
 
+            // Render the dropdown menu with appropriate selected value and sync checkbox
             return `
                 <div class="direction-cell" data-project-name="${projectName}">
                     <select class="direction-dropdown" ${disabled}>
@@ -1421,6 +1429,7 @@ function populateDirectionColumn(commonProjects, configData) {
         }).join('');
     }
 }
+
 
 function collectSyncSettings() {
     const projects = [];
@@ -1465,6 +1474,7 @@ function generateFolderPairsXml(clientName, projects, existingPairsSet) {
         // Declare leftPath and rightPath with let so they can be reassigned
         let leftPath;
         let rightPath;
+        let differences;
         project.name = project.name.replace(/&/g, '&amp;');
 
         if (selectedCreationType === 'clientProject') {
@@ -1472,12 +1482,16 @@ function generateFolderPairsXml(clientName, projects, existingPairsSet) {
                 // Use template literals correctly with backticks, not single quotes
                 rightPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;
                 leftPath = `C:\\_Clients\\${clientName}\\${project.name}`;
+                differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="left" RightOnly="left"/>';
             } else if (project.direction === 'Update Right') {
                 leftPath = `C:\\_Clients\\${clientName}\\${project.name}`;
                 rightPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;
+                differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="none" RightOnly="none"/>';
+
             } else if (project.direction === 'Update Left') {
                 leftPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;
                 rightPath = `C:\\_Clients\\${clientName}\\${project.name}`;
+                differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="none" RightOnly="none"/>';
             }
         }
         else if (selectedCreationType === 'quoteDirectory') {
@@ -1487,16 +1501,22 @@ function generateFolderPairsXml(clientName, projects, existingPairsSet) {
                 // Use template literals correctly with backticks, not single quotes
                 leftPath = `G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 rightPath = `C:\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
+                differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="left" RightOnly="left"/>';
+
             } else if (project.direction === 'Update Right') {
                 leftPath = `C:\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 rightPath = `G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
+                differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="none" RightOnly="none"/>';
+
             } else if (project.direction === 'Update Left') {
                 leftPath = `G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 rightPath = `C:\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
+                differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="none" RightOnly="none"/>';
+
             }
         }
         const pairIdentifier = `${leftPath}|${rightPath}`;
-
+        console.log(pairIdentifier);
         // Check for duplicates
         if (!existingPairsSet.has(pairIdentifier)) {
             // If it's not a duplicate, add it to the XML string
@@ -1505,8 +1525,7 @@ function generateFolderPairsXml(clientName, projects, existingPairsSet) {
                 <Left>${leftPath}</Left>
                 <Right>${rightPath}</Right>
                 <Synchronize>
-                    <Variant>${project.direction === 'Update Both' ? 'TwoWay' : 'Update'}</Variant>
-                    <DetectMovedFiles>false</DetectMovedFiles>
+                    ${differences}
                     <DeletionPolicy>RecycleBin</DeletionPolicy>
                     <VersioningFolder Style="Replace"/>
                 </Synchronize>
