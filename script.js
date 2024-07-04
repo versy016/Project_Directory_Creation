@@ -675,8 +675,13 @@ function readSubfolders(directoryPath) {
 // When the user clicks the button, open the modal 
 document.getElementById('searchclientButton').addEventListener('click', async () => {
     const clientName = document.getElementById('clientInput1').value.trim();
-    let  clientFolderPathC = path.join('C:\\_Clients', clientName);
-    let  clientFolderPathG = path.join(selected_drive, clientName);
+    if (clientName = '') {
+        ipcRenderer.send('show-custom-alert', 'Please enter a client name.');
+        return;
+    }
+    else{
+    let clientFolderPathC = path.join('C:\\_Clients', clientName);
+    let clientFolderPathG = path.join(selected_drive, clientName);
 
     const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
     if (selectedCreationType === 'quoteDirectory') {
@@ -739,6 +744,7 @@ document.getElementById('searchclientButton').addEventListener('click', async ()
     } catch (error) {
         console.error('Error:', error);
     }
+}
 });
 
 // Helper function to calculate folder size recursively
