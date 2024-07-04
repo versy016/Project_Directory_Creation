@@ -356,29 +356,33 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.getElementById('driveToggle').addEventListener('change', function () {
-        const clientName = document.getElementById('clientInput').value.trim();
-        
+    const clientName = document.getElementById('clientInput').value.trim();
+
     if (this.checked) {
         console.log('Switch to J drive version');
         document.getElementById('gDriveHeading').textContent = 'J Drive Projects:';
         document.querySelector('.quotediv').style.display = 'none';
 
         selected_drive = 'J:\\__Clients';
-        drive_symbol = 'J'
+        drive_symbol = 'J';
+        if (clientName === '') {
+            return;
+        }
         searchForClient(clientName, true);
 
     } else {
-        console.log('Switch back to default drive version');
+        console.log('Switch to G drive version');
         document.getElementById('gDriveHeading').textContent = 'G Drive Projects:';
-        selected_drive = 'G:\\Shared drives\\ES Cloud\\_Clients'
-        drive_symbol = 'G'
+        selected_drive = 'G:\\Shared drives\\ES Cloud\\_Clients';
+        drive_symbol = 'G';
         document.querySelector('.quotediv').style.display = 'inline';
-
+        if (clientName === '') {
+            return;
+        }
         searchForClient(clientName, true);
-
-
     }
 });
+
 
 
 async function searchForClient(clientName, refresh) {
@@ -675,10 +679,10 @@ function readSubfolders(directoryPath) {
 // When the user clicks the button, open the modal 
 document.getElementById('searchclientButton').addEventListener('click', async () => {
     const clientName = document.getElementById('clientInput1').value.trim();
-    if (clientName = '') {
-        ipcRenderer.send('show-custom-alert', 'Please enter a client name.');
-        return;
-    }
+    if (clientName === '') {
+            ipcRenderer.send('show-custom-alert', 'Please enter a client name.');
+            return;
+        }
     else{
     let clientFolderPathC = path.join('C:\\_Clients', clientName);
     let clientFolderPathG = path.join(selected_drive, clientName);
