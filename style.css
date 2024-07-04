@@ -580,3 +580,55 @@ button:hover {
     /* Space between icons */
     cursor: pointer;
 }
+
+.toggle-switch-container {
+    position: absolute;
+    right: 20px;
+    display: flex;
+    align-items: center;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+    display: none;
+}
+
+/* Custom slider */
+.switch .slider {
+    position: relative;
+    display: inline-block;
+    width: 54px;
+    height: 27px;
+    background-color: #ccc;
+    border-radius: 136px;
+    cursor: pointer;
+    transition: .4s;
+}
+
+.switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+/* Move the slider to the right on check */
+input:checked+.slider {
+    background-color: #007bff;
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
+/* Label styling */
+.switch-label {
+    margin-left: 5px;
+    font-size: 18px;
+    color: #333;
+}

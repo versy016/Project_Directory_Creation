@@ -9,7 +9,8 @@ const fetch = require('node-fetch'); // Assuming Node.js environment
 const client = algoliasearch('ENGDR4U6W2', 'b999f6e45ff70ff80d4959d5e748d04c');
 const index = client.initIndex('Tenders');
 const { shell } = require('electron');
-
+let selected_drive = "G:\\Shared drives\\ES Cloud\\_Clients";
+let drive_symbol = 'G';
 
 ipcRenderer.on('directory-existence', (event, exists) => {
   if (!exists) {
@@ -140,6 +141,9 @@ window.fetchAndIndexClients = async () => {
     }
 
 };
+
+
+
 
 document.getElementById('submitClientForm').addEventListener('click', async (event) => {
     event.preventDefault(); // Prevent default form submission
@@ -321,12 +325,61 @@ function readProjectsFromDirectory(directoryPath) {
 function getBaseDirectories() {
     const selectedValue = document.querySelector('input[name="creationType"]:checked').value;
     if (selectedValue === 'clientProject') {
-        return ['C:\\_Clients', 'G:\\Shared drives\\ES Cloud\\_Clients'];
+        return ['C:\\_Clients', selected_drive];
 
     } else if (selectedValue === 'quoteDirectory') {
+
         return ['C:\\__Accounts\\__CLients', 'G:\\Shared drives\\Accounts QT\\__Accounts\\__CLients'];
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to check the state of the radio buttons and hide/show the toggle switch
+    function updateToggleVisibility() {
+        var quoteDirectoryRadio = document.querySelector('input[name="creationType"][value="quoteDirectory"]');
+        var driveContainer = document.getElementById('driveContainter');
+        if (quoteDirectoryRadio.checked) {
+            driveContainer.style.display = 'none'; // Hide the toggle switch
+        } else {
+            driveContainer.style.display = 'block'; // Show the toggle switch
+        }
+    }
+
+    // Attach event listeners to radio buttons for changes
+    var creationTypeRadios = document.querySelectorAll('input[name="creationType"]');
+    creationTypeRadios.forEach(function(radio) {
+        radio.addEventListener('change', updateToggleVisibility);
+    });
+
+    // Call the function on page load to set the correct initial visibility
+    updateToggleVisibility();
+});
+
+document.getElementById('driveToggle').addEventListener('change', function () {
+        const clientName = document.getElementById('clientInput').value.trim();
+        
+    if (this.checked) {
+        console.log('Switch to J drive version');
+        document.getElementById('gDriveHeading').textContent = 'J Drive Projects:';
+        document.querySelector('.quotediv').style.display = 'none';
+
+        selected_drive = 'J:\\__Clients';
+        drive_symbol = 'J'
+        searchForClient(clientName, true);
+
+    } else {
+        console.log('Switch back to default drive version');
+        document.getElementById('gDriveHeading').textContent = 'G Drive Projects:';
+        selected_drive = 'G:\\Shared drives\\ES Cloud\\_Clients'
+        drive_symbol = 'G'
+        document.querySelector('.quotediv').style.display = 'inline';
+
+        searchForClient(clientName, true);
+
+
+    }
+});
+
 
 async function searchForClient(clientName, refresh) {
      
@@ -391,7 +444,7 @@ async function searchForClient(clientName, refresh) {
     const combinedGProjects = [...sortedCommonProjects, ...sortedUniqueGProjects];
    
     let cpath = path.join('C:\\_Clients', clientName);
-    let gpath = path.join('G:\\Shared drives\\ES Cloud\\_Clients', clientName);
+    let gpath = path.join(selected_drive, clientName);
 
     const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
     let xmlConfigData = await readAndProcessXmlConfig('C:\\Freefilesyncfiles\\SyncSettings.ffs_gui');
@@ -547,7 +600,7 @@ function copygtoc(missingProjects, clientName){
         
             if (selectedCreationType === 'clientProject') {
                  destBasePath = 'C:\\_Clients';
-                 sourceBasePath = 'G:\\Shared drives\\ES Cloud\\_Clients';
+                 sourceBasePath = selected_drive;
             } else if (selectedCreationType === 'quoteDirectory') {
                 destBasePath = 'C:\\__Accounts\\__Clients';
                  sourceBasePath= 'G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients';
@@ -623,7 +676,7 @@ function readSubfolders(directoryPath) {
 document.getElementById('searchclientButton').addEventListener('click', async () => {
     const clientName = document.getElementById('clientInput1').value.trim();
     let  clientFolderPathC = path.join('C:\\_Clients', clientName);
-    let  clientFolderPathG = path.join('G:\\Shared drives\\ES Cloud\\_Clients', clientName);
+    let  clientFolderPathG = path.join(selected_drive, clientName);
 
     const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
     if (selectedCreationType === 'quoteDirectory') {
@@ -752,7 +805,7 @@ document.getElementById('createSyncFolderPair').addEventListener('change', (even
     document.getElementById('directioncell').style.display = event.target.checked ? 'flex' : 'none';
 });
 async function copyToGDrive(clientName, newProjectPath, newProjectName) {
-    gDriveClientPath = path.join('G:\\Shared drives\\ES Cloud\\_Clients', clientName);
+    gDriveClientPath = path.join(selected_drive, clientName);
 
     const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
     if (selectedCreationType === 'quoteDirectory') {
@@ -859,7 +912,7 @@ document.getElementById('btnSubmit').addEventListener('click', async (event) => 
     // Construct the new project path
     
     let clientFolderPathC = path.join('C:\\_Clients', clientName);
-    let clientFolderPathG = path.join('G:\\Shared drives\\ES Cloud\\_Clients', clientName);
+    let clientFolderPathG = path.join(selected_drive, clientName);
     
 
     if (selectedCreationType === 'quoteDirectory') {
@@ -1045,7 +1098,7 @@ document.getElementById('btnSubmit').addEventListener('click', async (event) => 
         if (copyToGDriveCheckbox.checked && copyTransIn.checked) {
             const transInSourcePrimary = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'TransIn');
             const transInSourceSecondary = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients', clientName, newProjectName, 'TransIn');
-            const transInDestinationG = path.join('G:\\Shared drives\\ES Cloud\\_Clients', clientName, newProjectName, 'TransIn');
+            const transInDestinationG = path.join(selected_drive, clientName, newProjectName, 'TransIn');
 
             try {
                 await fs.promises.access(transInSourcePrimary);
@@ -1254,10 +1307,10 @@ async function populateProjects(projectList, elementId, clientName) {
 
     // Construct base paths for primary and secondary directories for both drives
     const basePathCPrimary = path.join('C:\\_Clients\\', clientInput);
-    const basePathGPrimary = path.join('G:\\Shared drives\\ES Cloud\\_Clients\\', clientInput);
+    const basePathGPrimary = path.join(selected_drive, clientInput);
     const basePathCQuotes = path.join('C:\\__Accounts\\__Clients\\', clientInput);
     const basePathGQuotes = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients\\', clientInput);
-    if (clientInput !== '' && clientName !== 'C:\\_Clients' && clientName !== 'G:\\Shared drives\\ES Cloud\\_Clients' && clientName !== 'C:\\__Accounts\\__Clients' && clientName !== 'G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients') {
+    if (clientInput !== '' && clientName !== 'C:\\_Clients' && clientName !== selected_drive && clientName !== 'C:\\__Accounts\\__Clients' && clientName !== 'G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients') {
         const projectRows = await Promise.all(projectList.map(async (project) => {
             // Check existence in primary directories
             const existsInCPrimary = await projectExists(basePathCPrimary, project);
@@ -1284,13 +1337,13 @@ async function populateProjects(projectList, elementId, clientName) {
             // Logic to enable copy button based on selected creation type and where the project exists
             if (selectedCreationType === 'clientProject' && (existsInCPrimary !== existsInGPrimary)) {
                 // Handle client project copy logic
-                let copyTo = existsInCPrimary ? 'G' : 'C';
+                let copyTo = existsInCPrimary ?  drive_symbol : 'C';
                 let copyFromPath = existsInCPrimary ? basePathCPrimary : basePathGPrimary;
                 let copyToPath = existsInCPrimary ? basePathGPrimary : basePathCPrimary;
                 copyButtonHTML = generateCopyButtonHTML(project, copyFromPath, copyToPath, copyTo);
             } else if (selectedCreationType === 'quoteDirectory' && (existsInCQuotes !== existsInGQuotes)) {
                 // Handle quote directory copy logic
-                let copyTo = existsInCQuotes ? 'G' : 'C';
+                let copyTo = existsInCQuotes ? drive_symbol : 'C';
                 let copyFromPath = existsInCQuotes ? basePathCQuotes : basePathGQuotes;
                 let copyToPath = existsInCQuotes ? basePathGQuotes : basePathCQuotes;
                 copyButtonHTML = generateCopyButtonHTML(project, copyFromPath, copyToPath, copyTo);
@@ -1707,10 +1760,10 @@ document.querySelectorAll('input[name="creationType"]').forEach(radio => {
 
             try {
                 const cDriveProjects = await readProjectsFromDirectory('C:\\_Clients');
-                const gDriveProjects = await readProjectsFromDirectory('G:\\Shared drives\\ES Cloud\\_Clients');
+                const gDriveProjects = await readProjectsFromDirectory(selected_drive);
 
                 let cpath = 'C:\\_Clients'
-                let gpath = 'G:\\Shared drives\\ES Cloud\\_Clients'
+                let gpath = selected_drive
                 // Populate the Existing Projects section
                 populateProjects(cDriveProjects, 'cDriveProjects', cpath);
                 populateProjects(gDriveProjects, 'gDriveProjects', gpath);
