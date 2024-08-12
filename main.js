@@ -82,6 +82,7 @@ app.on('ready', async () => {
   const appDir = path.dirname(app.getPath('exe'));
   const sources = [
     path.join(appDir, 'SyncSettings.ffs_gui'),
+    path.join(appDir, 'SyncSettingsJdrive.ffs_gui'),
     path.join(appDir, 'SyncSettings_Quotes.ffs_gui')
   ];
 

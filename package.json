@@ -1,6 +1,6 @@
 {
   "name": "project_directory_creation",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "project directory creation tool for Engineering Surveys",
   "main": "main.js",
   "scripts": {
@@ -61,6 +61,10 @@
       },
       {
         "from": "./SyncSettings.ffs_gui",
+        "to": ".",
+        "filter": ["**/*"]
+      },{
+        "from": "./SyncSettingsJdrive.ffs_gui",
         "to": ".",
         "filter": ["**/*"]
       }

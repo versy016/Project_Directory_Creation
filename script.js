@@ -360,6 +360,7 @@ document.getElementById('driveToggle').addEventListener('change', function () {
 
     if (this.checked) {
         console.log('Switch to J drive version');
+        document.getElementById('switchid').textContent = 'Switch to Sync C & G';
         document.getElementById('gDriveHeading').textContent = 'J Drive Projects:';
         document.querySelector('.quotediv').style.display = 'none';
 
@@ -372,6 +373,7 @@ document.getElementById('driveToggle').addEventListener('change', function () {
 
     } else {
         console.log('Switch to G drive version');
+        document.getElementById('switchid').textContent = 'Switch to Sync C & J';
         document.getElementById('gDriveHeading').textContent = 'G Drive Projects:';
         selected_drive = 'G:\\Shared drives\\ES Cloud\\_Clients';
         drive_symbol = 'G';
@@ -449,9 +451,16 @@ async function searchForClient(clientName, refresh) {
    
     let cpath = path.join('C:\\_Clients', clientName);
     let gpath = path.join(selected_drive, clientName);
-
+    let xmlConfigData = '';
     const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
-    let xmlConfigData = await readAndProcessXmlConfig('C:\\Freefilesyncfiles\\SyncSettings.ffs_gui');
+    if (selected_drive == 'J:\\__Clients') {
+        xmlConfigData = await readAndProcessXmlConfig('C:\\Freefilesyncfiles\\SyncSettingsJdrive.ffs_gui');
+    }
+    else {
+                xmlConfigData = await readAndProcessXmlConfig('C:\\Freefilesyncfiles\\SyncSettings.ffs_gui');
+
+    }
+    
 
     if (selectedCreationType === 'quoteDirectory') {
 
@@ -1040,9 +1049,12 @@ document.getElementById('btnSubmit').addEventListener('click', async (event) => 
             let xmlConfigPath='';
             // Save the updated XML configuration back to the file
             if (selectedCreationType === 'clientProject') {
-
-                xmlConfigPath = 'C:\\Freefilesyncfiles\\SyncSettings.ffs_gui';
-
+                if (selected_drive == 'J:\\__Clients') {
+                    xmlConfigPath = 'C:\\Freefilesyncfiles\\SyncSettingsJdrive.ffs_gui';
+                }
+                else {
+                    xmlConfigPath = 'C:\\Freefilesyncfiles\\SyncSettings.ffs_gui';
+                }
             }
             else 
                 {
@@ -1534,7 +1546,6 @@ function generateFolderPairsXml(clientName, projects, existingPairsSet) {
 
     const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
     projects.forEach(project => {
-        // Declare leftPath and rightPath with let so they can be reassigned
         let leftPath;
         let rightPath;
         let differences;
@@ -1542,42 +1553,40 @@ function generateFolderPairsXml(clientName, projects, existingPairsSet) {
 
         if (selectedCreationType === 'clientProject') {
             if (project.direction === 'Update Both') {
-                // Use template literals correctly with backticks, not single quotes
-                rightPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;
+                rightPath = `${selected_drive}\\${clientName}\\${project.name}`;
                 leftPath = `C:\\_Clients\\${clientName}\\${project.name}`;
                 differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="left" RightOnly="left"/>';
             } else if (project.direction === 'Update Right') {
                 leftPath = `C:\\_Clients\\${clientName}\\${project.name}`;
-                rightPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;
+                rightPath = `${selected_drive}\\${clientName}\\${project.name}`;
                 differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="none" RightOnly="none"/>';
-
             } else if (project.direction === 'Update Left') {
-                leftPath = `G:\\Shared drives\\ES Cloud\\_Clients\\${clientName}\\${project.name}`;
+                leftPath = `${selected_drive}\\${clientName}\\${project.name}`;
                 rightPath = `C:\\_Clients\\${clientName}\\${project.name}`;
                 differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="none" RightOnly="none"/>';
             }
-        }
-        else if (selectedCreationType === 'quoteDirectory') {
-            console.log(project.direction);
-
+        } else if (selectedCreationType === 'quoteDirectory') {
             if (project.direction === 'Update Both') {
-                // Use template literals correctly with backticks, not single quotes
                 leftPath = `G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 rightPath = `C:\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="left" RightOnly="left"/>';
-
             } else if (project.direction === 'Update Right') {
                 leftPath = `C:\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 rightPath = `G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="none" RightOnly="none"/>';
-
             } else if (project.direction === 'Update Left') {
                 leftPath = `G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 rightPath = `C:\\__Accounts\\__Clients\\${clientName}\\${project.name}`;
                 differences = '<Differences LeftOnly="right" LeftNewer="right" RightNewer="none" RightOnly="none"/>';
-
             }
         }
+
+        // Skip the folder pairs based on the selected drive
+        if ((selected_drive === 'G:\\Shared drives\\ES Cloud\\_Clients' && (leftPath.includes('J:') || rightPath.includes('J:'))) ||
+            (selected_drive === 'J:\\__Clients' && (leftPath.includes('G:') || rightPath.includes('G:')))) {
+            return; // Skip this iteration
+        }
+
         const pairIdentifier = `${leftPath}|${rightPath}`;
         console.log(pairIdentifier);
         // Check for duplicates
@@ -1594,12 +1603,11 @@ function generateFolderPairsXml(clientName, projects, existingPairsSet) {
                 </Synchronize>
             </Pair>\n`;
         }
-      
-        
     });
 
     return folderPairsXml;
 }
+
 
 // Function to read the existing XML configuration
 async function readExistingXmlConfig(filePath) {
@@ -1846,8 +1854,12 @@ document.getElementById('runSyncButton').addEventListener('click', async () => {
 
     // Save the updated XML configuration back to the file
     if (selectedCreationType === 'clientProject') {
-
-        existingXmlConfig = await readExistingXmlConfig('C:\\Freefilesyncfiles\\SyncSettings.ffs_gui');
+        if (selected_drive == 'J:\\__Clients') {
+            existingXmlConfig = await readExistingXmlConfig('C:\\Freefilesyncfiles\\SyncSettingsJdrive.ffs_gui');
+        }
+        else {
+            existingXmlConfig = await readExistingXmlConfig('C:\\Freefilesyncfiles\\SyncSettings.ffs_gui');
+        }
     }
     else 
         {
@@ -1869,8 +1881,13 @@ document.getElementById('runSyncButton').addEventListener('click', async () => {
     // Save the updated XML configuration back to the file
     let xmlConfigPath = '';
     if (selectedCreationType === 'clientProject') {
-
-        xmlConfigPath = 'C:\\Freefilesyncfiles\\SyncSettings.ffs_gui';
+        if(selected_drive == 'J:\\__Clients')
+        {
+            xmlConfigPath = 'C:\\Freefilesyncfiles\\SyncSettingsJdrive.ffs_gui';
+        }
+        else{
+            xmlConfigPath = 'C:\\Freefilesyncfiles\\SyncSettings.ffs_gui';
+        }
 
     }
     else 
@@ -1909,9 +1926,13 @@ document.getElementById('runSyncButton').addEventListener('click', async () => {
 
         let result;
         if (selectedCreationType === 'clientProject') {
+            if (selected_drive == 'J:\\__Clients') {
+                result = await shell.openPath('C:\\Freefilesyncfiles\\SyncSettingsJdrive.ffs_gui');
+            }
+            else {
+                result = await shell.openPath('C:\\Freefilesyncfiles\\SyncSettings.ffs_gui');
 
-            result = await shell.openPath('C:\\Freefilesyncfiles\\SyncSettings.ffs_gui');
-    
+            }
         }
         else 
             {

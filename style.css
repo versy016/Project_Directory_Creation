@@ -599,7 +599,7 @@ button:hover {
     display: inline-block;
     width: 54px;
     height: 27px;
-    background-color: #ccc;
+    background-color: #2ec84d;
     border-radius: 136px;
     cursor: pointer;
     transition: .4s;
@@ -621,9 +621,13 @@ button:hover {
 input:checked+.slider {
     background-color: #007bff;
 }
+input:checked.slider {
+    background-color: #007bff;
+}
 
 input:checked+.slider:before {
     transform: translateX(26px);
+    
 }
 
 /* Label styling */
