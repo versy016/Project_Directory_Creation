@@ -576,7 +576,10 @@ button:hover {
 }
 
 .info-icon,
-.refresh-icon {
+.archive-icon,
+.refresh-icon,
+.Export-Files-list-icon,
+.Large-Files-list-icon {
     /* Space between icons */
     cursor: pointer;
 }

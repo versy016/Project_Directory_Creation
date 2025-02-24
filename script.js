@@ -9,8 +9,290 @@ const fetch = require('node-fetch'); // Assuming Node.js environment
 const client = algoliasearch('ENGDR4U6W2', 'b999f6e45ff70ff80d4959d5e748d04c');
 const index = client.initIndex('Tenders');
 const { shell } = require('electron');
-let selected_drive = "G:\\Shared drives\\ES Cloud\\_Clients";
 let drive_symbol = 'G';
+const archiver = require('archiver');
+const G_DRIVE_PATH = 'G:/Shared drives/ES Cloud/_Clients/FULTON HOGAN';
+const THREE_MONTHS_AGO = new Date();
+const ExcelJS = require('exceljs');  // Correctly importing the exceljs library
+THREE_MONTHS_AGO.setMonth(THREE_MONTHS_AGO.getMonth() - 3);
+let selected_drive = '';
+let majorClients = [];
+const majorClientsFilePath = "G:\\Shared drives\\ES Cloud\\_Admin\\IT_Utilities\\Development\\majorClients.json";
+
+
+document.getElementById('searchButton').addEventListener('click', () => {
+    const clientNameInput = document.getElementById('clientInput').value.trim(); // Get the input value
+    if (!clientNameInput) {
+        console.error('Client name input is empty.');
+        return;
+    }
+
+    selected_drive = getSharedDrivePath(clientNameInput);
+    console.log('Selected Drive Path:', selected_drive);
+
+    // Add further actions with the selectedDrive path here
+});
+
+// Load the major clients from the JSON file
+function loadMajorClients() {
+    try {
+        if (!fs.existsSync(majorClientsFilePath)) {
+            console.error("Error: majorClients.json file not found at", majorClientsFilePath);
+            return;
+        }
+
+        const rawData = fs.readFileSync(majorClientsFilePath, 'utf-8');
+        const jsonData = JSON.parse(rawData);
+        majorClients = jsonData.majorClients.map(client => client.toUpperCase()); // Convert to uppercase for case-insensitive comparison
+        console.log("✅ Loaded major clients:", majorClients);
+    } catch (error) {
+        console.error("❌ Error loading major clients:", error);
+        majorClients = []; // Fallback to empty array if file read fails
+    }
+}
+loadMajorClients();
+
+
+function getSharedDrivePath(clientName) {
+    if (!clientName || typeof clientName !== 'string') {
+        console.error('Invalid client name:', clientName);
+        return null;
+    }
+
+    const driveBasePath = 'G:/Shared drives';
+
+    // ✅ If client is a major client, return only the base path
+    if (majorClients.includes(clientName.toUpperCase())) {
+        return driveBasePath;
+    }
+
+    // ✅ Categorize other clients based on the first letter
+    const firstLetter = clientName[0].toUpperCase();
+    if (firstLetter >= 'A' && firstLetter <= 'Z') {
+        return `${driveBasePath}/_${firstLetter}`;
+    }
+
+    // ✅ Default fallback for unrecognized cases
+    return `${driveBasePath}/_Misc`;
+}
+
+// document.getElementById('archiveicon').onclick = function() {
+//      processClientFolders();
+//     };
+
+// Function to get the size of a folder
+async function getFolderSize(folderPath) {
+    let totalSize = 0;
+
+    console.log(`Checking folder size for: ${folderPath}`);  // Debugging info
+
+    try {
+        const files = await fr.readdir(folderPath, { withFileTypes: true });
+
+        for (const file of files) {
+            const filePath = path.join(folderPath, file.name);
+            if (file.isDirectory()) {
+                console.log(`Entering subfolder: ${file.name}`);  // Debugging info
+                totalSize += await getFolderSize(filePath); // Recursively check subfolders
+            } else {
+                const fileStat = await fr.stat(filePath);
+                totalSize += fileStat.size;
+                console.log(`Found file: ${file.name}, Size: ${fileStat.size} bytes`);  // Debugging info
+            }
+        }
+
+        return totalSize;
+    } catch (error) {
+        console.error(`Error reading folder ${folderPath}: ${error}`);
+        return totalSize;
+    }
+}
+
+
+// Function to find projects larger than 2.5GB and show them in the modal
+async function showLargeProjects() {
+    const largeFilesList = document.getElementById('largeFilesList');
+    largeFilesList.innerHTML = '';  // Clear previous list
+    console.log('Starting to search for large projects...');  // Debugging info
+
+    try {
+        const clientFolders = await fr.readdir(clientBasePath);
+        console.log(`Found ${clientFolders.length} client folders to check`);  // Debugging info
+        
+        for (const clientFolder of clientFolders) {
+            const clientFolderPath = path.join(clientBasePath, clientFolder);
+            const folderStat = await fr.stat(clientFolderPath);
+
+            if (folderStat.isDirectory()) {
+                console.log(`Processing folder: ${clientFolder}`);  // Debugging info
+                const totalSize = await getFolderSize(clientFolderPath);
+                const sizeGB = (totalSize / (1024 ** 3)).toFixed(2);  // Convert bytes to GB
+                console.log(`Folder size of ${clientFolder}: ${sizeGB} GB`);  // Debugging info
+
+                if (sizeGB > 2.5) {
+                    // Add to the list of large files
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${clientFolder}: ${sizeGB} GB`;
+                    largeFilesList.appendChild(listItem);
+                    console.log(`Added ${clientFolder} to the large files list`);  // Debugging info
+                }
+            }
+        }
+
+        // Show the modal after processing
+        const modal = document.getElementById('largeFilesModal');
+        console.log('Displaying the modal...');  // Debugging info
+        modal.style.display = 'block';
+
+    } catch (error) {
+        console.error(`Error finding large projects: ${error}`);
+    }
+}
+
+// Event listener for the Large Files icon click
+// document.querySelector('.Large-Files-list-icon').addEventListener('click', async () => {
+//     console.log("Large Files icon clicked");  // Debugging info
+//     await showLargeProjects();
+//     console.log("Finished processing large files");  // Debugging info
+// });
+
+// Close modal event listener
+// document.querySelector('.close-large-files').addEventListener('click', function() {
+//     document.getElementById('largeFilesModal').style.display = 'none';
+//     console.log('Closed the modal');  // Debugging info
+// });
+// Function to get the number of files, folders, and total size
+async function getFolderDetails(folderPath) {
+    let totalFiles = 0;
+    let totalFolders = 0;
+    let totalSize = 0;
+
+    console.log(`Reading folder: ${folderPath}`);  // Debugging info
+
+    try {
+        const files = await fr.readdir(folderPath, { withFileTypes: true });
+
+        for (const file of files) {
+            const filePath = path.join(folderPath, file.name);
+            if (file.isDirectory()) {
+                totalFolders++;
+                console.log(`Entering subfolder: ${file.name}`);  // Debugging info
+                const folderDetails = await getFolderDetails(filePath); // Recursively check subfolders
+                totalFiles += folderDetails.totalFiles;
+                totalSize += folderDetails.totalSize;
+            } else {
+                totalFiles++;
+                totalSize += (await fr.stat(filePath)).size;
+            }
+        }
+
+        return { totalFiles, totalFolders, totalSize };
+    } catch (error) {
+        console.error(`Error reading folder ${folderPath}: ${error}`);
+        return { totalFiles, totalFolders, totalSize };
+    }
+}
+
+// Function to generate the report and save to Excel
+async function generateClientReport() {
+    console.log("Starting report generation...");  // Debugging info
+    const workbook = new ExcelJS.Workbook();  // Creating a new Excel workbook
+    const worksheet = workbook.addWorksheet('Client Report');
+
+    worksheet.columns = [
+        { header: 'Client', key: 'client', width: 30 },
+        { header: 'Total Files', key: 'totalFiles', width: 15 },
+        { header: 'Total Folders', key: 'totalFolders', width: 15 },
+        { header: 'Size (GB)', key: 'size', width: 15 }
+    ];
+
+    try {
+        const clientFolders = await fr.readdir(clientBasePath);
+        console.log(`Found ${clientFolders.length} client folders`);  // Debugging info
+        for (const clientFolder of clientFolders) {
+            const clientFolderPath = path.join(clientBasePath, clientFolder);
+            const folderStat = await fr.stat(clientFolderPath);
+            if (folderStat.isDirectory()) {
+                console.log(`Processing client folder: ${clientFolder}`);  // Debugging info
+
+                const { totalFiles, totalFolders, totalSize } = await getFolderDetails(clientFolderPath);
+                const sizeGB = (totalSize / (1024 ** 3)).toFixed(2); // Convert bytes to GB and round to 2 decimal places
+                worksheet.addRow({ client: clientFolder, totalFiles, totalFolders, size: sizeGB });
+                console.log(`Added data for ${clientFolder}: Files = ${totalFiles}, Folders = ${totalFolders}, Size = ${sizeGB} GB`);  // Debugging info
+
+            }
+        }
+
+        const outputPath = 'G:/Shared drives/ES Cloud/_Clients_report.xlsx';
+        await workbook.xlsx.writeFile(outputPath);
+        console.log(`Report generated and saved to ${outputPath}`);
+    } catch (error) {
+        console.error(`Error generating report: ${error}`);
+    }
+}
+
+// // Event listener for the icon click
+// document.querySelector('.Export-Files-list-icon').addEventListener('click', async () => {
+//     await generateClientReport();
+//     console.log("Report generation process finished");  // Debugging info
+
+// });
+
+
+// Zipping and deleting logic here
+const zipFolder = (folderPath, zipFilePath) => {
+  return new Promise((resolve, reject) => {
+    const output = fr.createWriteStream(zipFilePath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    output.on('close', () => {
+      console.log(`Zipped folder: ${folderPath}`);
+      resolve();
+    });
+
+    archive.on('error', (err) => {
+      reject(err);
+    });
+
+    archive.pipe(output);
+    archive.directory(folderPath, false);
+    archive.finalize();
+  });
+};
+
+const processClientFolders = async () => {
+  try {
+    const clientFolders = await fr.readdir(G_DRIVE_PATH);
+
+    for (const clientFolder of clientFolders) {
+      const clientFolderPath = path.join(G_DRIVE_PATH, clientFolder);
+
+      if ((await fr.stat(clientFolderPath)).isDirectory()) {
+        const projectFiles = await fr.readdir(clientFolderPath);
+
+        let filesToZip = [];
+
+        for (const file of projectFiles) {
+          const filePath = path.join(clientFolderPath, file);
+          const fileStats = await fr.stat(filePath);
+
+          if (fileStats.mtime <= new Date()) {
+            filesToZip.push(filePath);
+          }
+        }
+
+        if (filesToZip.length > 0) {
+          const zipFilePath = path.join(G_DRIVE_PATH, `${clientFolder}.zip`);
+          await zipFolder(clientFolderPath, zipFilePath);
+          await fr.remove(clientFolderPath);
+          console.log(`Deleted folder: ${clientFolderPath}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error processing client folders: ${error.message}`);
+  }
+};
 
 ipcRenderer.on('directory-existence', (event, exists) => {
   if (!exists) {
@@ -141,9 +423,6 @@ window.fetchAndIndexClients = async () => {
     }
 
 };
-
-
-
 
 document.getElementById('submitClientForm').addEventListener('click', async (event) => {
     event.preventDefault(); // Prevent default form submission
@@ -321,17 +600,22 @@ function readProjectsFromDirectory(directoryPath) {
   }
 
 
-// Function to search for a client folder in the specified directories
+// Function to return correct base directories based on selection
 function getBaseDirectories() {
     const selectedValue = document.querySelector('input[name="creationType"]:checked').value;
+
     if (selectedValue === 'clientProject') {
-        return ['C:\\_Clients', selected_drive];
+        console.log("📂 Searching in Client Projects (C and G Drives)");
+        return ['C:\\_Clients', selected_drive];  // Normal client projects
 
     } else if (selectedValue === 'quoteDirectory') {
-
-        return ['C:\\__Accounts\\__CLients', 'G:\\Shared drives\\Accounts QT\\__Accounts\\__CLients'];
+        console.log("📂 Searching in Quote Directory (C and G Drives)");
+        return ['C:\\__Accounts\\__Clients', 'G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients'];
     }
+
+    return [];  // Default empty array to prevent crashes
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
     // Function to check the state of the radio buttons and hide/show the toggle switch
@@ -375,7 +659,7 @@ document.getElementById('driveToggle').addEventListener('change', function () {
         console.log('Switch to G drive version');
         document.getElementById('switchid').textContent = 'Switch to Sync C & J';
         document.getElementById('gDriveHeading').textContent = 'G Drive Projects:';
-        selected_drive = 'G:\\Shared drives\\ES Cloud\\_Clients';
+        selected_drive = getSharedDrivePath(clientName);
         drive_symbol = 'G';
         document.querySelector('.quotediv').style.display = 'inline';
         if (clientName === '') {
@@ -400,7 +684,13 @@ async function searchForClient(clientName, refresh) {
 
 
     
-    // Map over the base directories and construct the full path
+    // // Map over the base directories and construct the full path
+    // const sharedDrivePath = getSharedDrivePath(clientName);
+    //     const directoryPaths = [
+    //         path.join("C:/_Clients", clientName),
+    //         path.join(sharedDrivePath, clientName)
+    //     ];
+
     const directoryPaths = baseDirectories.map(dir => path.join(dir, clientName));
 
     // Get the list of subdirectories for each client path
@@ -824,40 +1114,35 @@ document.getElementById('createSyncFolderPair').addEventListener('change', (even
     document.getElementById('directioncell').style.display = event.target.checked ? 'flex' : 'none';
 });
 async function copyToGDrive(clientName, newProjectPath, newProjectName) {
-    gDriveClientPath = path.join(selected_drive, clientName);
+    const sharedDrivePath = getSharedDrivePath(clientName);
+    console.log(sharedDrivePath);
+    const gDriveClientPath = path.join(sharedDrivePath, clientName);
+    console.log(sharedDrivePath);
 
-    const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
-    if (selectedCreationType === 'quoteDirectory') {
-
-        gDriveClientPath = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients', clientName);
-    }
-
-    console.log(gDriveClientPath)
-    // Check if client directory exists in G Drive
+    // Check if client directory exists in the shared drive
     if (fs.existsSync(gDriveClientPath)) {
         const gDriveProjectPath = path.join(gDriveClientPath, newProjectName);
 
-        // Check if project already exists in G Drive
+        // Check if the project already exists
         if (!fs.existsSync(gDriveProjectPath)) {
-            // Copy the project to G Drive
+            // Copy the project to the shared drive
             await copyDirectory(newProjectPath, gDriveProjectPath);
             return true;
         } else {
-            // Project already exists in G Drive
-           ipcRenderer.send('show-custom-alert', 'Project already exists in G Drive.');
+            ipcRenderer.send("show-custom-alert", "Project already exists in the shared drive.");
             return false;
         }
     } else {
-        // Client does not exist in G Drive
-        const createClient = confirm(`Client "${clientName}" does not exist in G Drive. Do you want to create it?`);
+        // Client does not exist in the shared drive
+        const createClient = confirm(`Client "${clientName}" does not exist in the shared drive. Do you want to create it?`);
         if (createClient) {
-            // Create client directory and copy project
             await fs.promises.mkdir(gDriveClientPath, { recursive: true });
             await copyDirectory(newProjectPath, path.join(gDriveClientPath, newProjectName));
             return true;
         }
     }
 }
+
 document.getElementById('enterManually').addEventListener('click', function(event) {
             event.preventDefault();
             const currentYear = new Date().getFullYear();
@@ -895,7 +1180,11 @@ document.getElementById('btnSubmit').addEventListener('click', async (event) => 
     const clientName = document.getElementById('clientInput').value.trim();
     let newProjectName = newProjectNameInput.value.trim();
     newProjectName = newProjectName.replace(/'/g, '');
+    newProjectNameInput.dispatchEvent(new Event('input')); 
+    newProjectName = newProjectName.replace(/['"]/g, '').replace(/\s+/g, '_');
 
+ // Regular expression pattern for valid project names
+    const projectNamePattern = /^(E(201[0-9]|202[0-9]|203[0-9]|204[0-9]|2050)\d{4}_[\w\s\/-]+|C\d{8}_[\w\s\/-]+|(201[0-9]|202[0-9]|203[0-9]|204[0-9]|2050)_[\w\s\/-]+)$/;
 
     let projectPrefix = '';
     // Validation
@@ -908,6 +1197,13 @@ document.getElementById('btnSubmit').addEventListener('click', async (event) => 
         ipcRenderer.send('show-custom-alert', 'Please enter a project name.');
         return;
     }
+
+    if (!projectNamePattern.test(newProjectName.trim())) {
+        ipcRenderer.send('show-custom-alert', 'Invalid project name format. It must start with "YYYY_", "E" followed by 8 digits, or "C" followed by 8 digits.');
+        return;
+    }
+
+
     const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
 
     if (!standardRadio.checked && !ditRadio.checked && !rpasRadio.checked) {
@@ -1164,7 +1460,7 @@ document.getElementById('btnSubmit').addEventListener('click', async (event) => 
         if (copyToGDriveCheckbox.checked && copyOHS.checked) {
             const ohsSourcePrimary = path.join('C:\\__Accounts\\__Clients', clientName, newProjectName, 'OHS');
             const ohsSourceSecondary = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients', clientName, newProjectName, 'OHS');
-            const ohsDestinationG = path.join('G:\\Shared drives\\ES Cloud\\_Clients', clientName, newProjectName, 'OHS');
+            const ohsDestinationG = path.join(selected_drive, clientName, newProjectName, 'OHS');
 
             try {
                 await fs.promises.access(ohsSourcePrimary);
@@ -1737,7 +2033,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
     contactDropdown.addEventListener("click", function(e) {
-
+                
             // Ensure that the click is on an li element
             if (e.target.tagName === 'LI') {
                 // Assume the contact details are within the text content and separated by newlines or other delimiters
@@ -1771,6 +2067,7 @@ const searchButton = document.getElementById("searchButton");
 
 document.querySelectorAll('input[name="creationType"]').forEach(radio => {
     radio.addEventListener('change', async (event) => {
+        
         if (event.target.value === 'clientProject') {
             // When "Client Project" is selected, read the directories
             document.getElementById('projecttypes').style.display = "block";
@@ -1798,6 +2095,8 @@ document.querySelectorAll('input[name="creationType"]').forEach(radio => {
             try {
                 const cDriveProjects = await readProjectsFromDirectory('C:\\__Accounts\\__Clients');
                 const gDriveProjects = await readProjectsFromDirectory('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients');
+                console.log("C Drive Quotes:", cDriveProjects);
+                                console.log("G Drive Quotes:", gDriveProjects);
                 
                 // Populate the Existing Projects section
                 populateProjects(cDriveProjects, 'cDriveProjects','C:\\__Accounts\\__Clients');

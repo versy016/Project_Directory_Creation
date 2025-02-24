@@ -65,37 +65,49 @@ function createWindow() {
 
 
 app.on('ready', async () => {
-  if (process.env.NODE_ENV === 'development') {
-    autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml');
-} else {
-    autoUpdater.updateConfigPath = path.join(__dirname, 'app-update.yml');
-}
-
-  autoUpdater.checkForUpdatesAndNotify();
-
-    const targetDir = 'C:\\Freefilesyncfiles'; // Define the target directory on the C: drive
-
-  // Ensure the directory exists
-  await fs.ensureDir(targetDir);
-
-  // Define the paths of the source files within the application directory
-  const appDir = path.dirname(app.getPath('exe'));
-  const sources = [
-    path.join(appDir, 'SyncSettings.ffs_gui'),
-    path.join(appDir, 'SyncSettingsJdrive.ffs_gui'),
-    path.join(appDir, 'SyncSettings_Quotes.ffs_gui')
-  ];
-
-  // Copy each source file to the target directory if it does not already exist there
-  sources.forEach(async (source) => {
-    const filename = path.basename(source);
-    const targetPath = path.join(targetDir, filename);
-    if (!await fs.pathExists(targetPath)) {
-      await fs.copy(source, targetPath);
+    if (process.env.NODE_ENV === 'development') {
+        autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml');
+    } else {
+        autoUpdater.updateConfigPath = path.join(__dirname, 'app-update.yml');
     }
-  });
 
+    autoUpdater.checkForUpdatesAndNotify();
 
+    const targetDir = 'C:\\Freefilesyncfiles'; // Target directory where files are stored
+    await fs.ensureDir(targetDir); // Ensure the directory exists
+
+    const appDir = path.dirname(app.getPath('exe')); // Get the directory where the app is running
+    const filesToReplace = ['SyncSettings.ffs_gui', 'SyncSettings_Quotes.ffs_gui']; // Force replace these
+    const filesToKeep = ['SyncSettingsJdrive.ffs_gui']; // Keep this file unchanged
+
+    // **Replace specified files**
+    for (const file of filesToReplace) {
+        const sourcePath = path.join(appDir, file);
+        const targetPath = path.join(targetDir, file);
+        try {
+            // Always replace these files, even if they exist
+            await fs.copy(sourcePath, targetPath, { overwrite: true });
+            console.log(`✅ Replaced: ${file}`);
+        } catch (error) {
+            console.error(`❌ Failed to replace ${file}:`, error);
+        }
+    }
+
+    // **Keep other files unchanged**
+    for (const file of filesToKeep) {
+        const sourcePath = path.join(appDir, file);
+        const targetPath = path.join(targetDir, file);
+        try {
+            if (!await fs.pathExists(targetPath)) {
+                await fs.copy(sourcePath, targetPath);
+                console.log(`✅ Copied (first time): ${file}`);
+            } else {
+                console.log(`🔄 Skipping ${file}, already exists.`);
+            }
+        } catch (error) {
+            console.error(`❌ Failed to copy ${file}:`, error);
+        }
+    }
 });
 
 

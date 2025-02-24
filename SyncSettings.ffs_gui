@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FreeFileSync XmlType="GUI" XmlFormat="19">
+<FreeFileSync XmlType="GUI" XmlFormat="23">
     <Notes/>
     <Compare>
         <Variant>TimeAndSize</Variant>
@@ -7,16 +7,10 @@
         <IgnoreTimeShift/>
     </Compare>
     <Synchronize>
-        <Variant>Custom</Variant>
-        <CustomDirections>
-            <LeftOnly>none</LeftOnly>
-            <RightOnly>none</RightOnly>
-            <LeftNewer>none</LeftNewer>
-            <RightNewer>none</RightNewer>
-            <Different>none</Different>
-            <Conflict>none</Conflict>
-        </CustomDirections>
-        <DetectMovedFiles>false</DetectMovedFiles>
+        <Changes>
+            <Left Create="right" Update="right" Delete="right"/>
+            <Right Create="left" Update="left" Delete="left"/>
+        </Changes>
         <DeletionPolicy>RecycleBin</DeletionPolicy>
         <VersioningFolder Style="Replace"/>
     </Synchronize>
@@ -36,9 +30,8 @@
         <TimeSpan Type="None">0</TimeSpan>
     </Filter>
     <FolderPairs>
-    
-
-</FolderPairs>
+        
+    </FolderPairs>
     <Errors Ignore="false" Retry="0" Delay="5"/>
     <PostSyncCommand Condition="Completion"/>
     <LogFolder/>

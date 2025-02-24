@@ -1,6 +1,6 @@
 {
   "name": "project_directory_creation",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "project directory creation tool for Engineering Surveys",
   "main": "main.js",
   "scripts": {
@@ -20,11 +20,14 @@
   "dependencies": {
     "@electron/remote": "^2.1.2",
     "algoliasearch": "^4.22.1",
+    "archiver": "^7.0.1",
     "electron-log": "^5.1.2",
     "electron-oauth2": "^3.0.0",
     "electron-updater": "^6.1.8",
+    "exceljs": "^4.4.0",
     "fs-extra": "^11.2.0",
     "googleapis": "^134.0.0",
+    "path": "^0.12.7",
     "xml2js": "^0.6.2"
   },
   "repository": "https://github.com/versy016/Project_Directory_Creation",
@@ -57,16 +60,23 @@
       {
         "from": "./SyncSettings_Quotes.ffs_gui",
         "to": ".",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "./SyncSettings.ffs_gui",
         "to": ".",
-        "filter": ["**/*"]
-      },{
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
         "from": "./SyncSettingsJdrive.ffs_gui",
         "to": ".",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
