@@ -1113,20 +1113,32 @@ document.getElementById('createClientButton').addEventListener('click', () => {
 document.getElementById('createSyncFolderPair').addEventListener('change', (event) => {
     document.getElementById('directioncell').style.display = event.target.checked ? 'flex' : 'none';
 });
-async function copyToGDrive(clientName, newProjectPath, newProjectName, destinationPath = null) {
-    let sharedDrivePath = destinationPath || getSharedDrivePath(clientName); // Use custom path if provided
-    console.log("📂 Shared Drive Path:", sharedDrivePath);
 
+async function copyToGDrive(clientName, newProjectPath, newProjectName) {
+    
+    const selectedCreationType = document.querySelector('input[name="creationType"]:checked').value;
+
+
+    // Determine the correct shared drive base path
+    let sharedDrivePath = selectedCreationType === 'quoteDirectory'
+        ? "G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients"
+        : getSharedDrivePath(clientName);
+
+    console.log("📂 Shared Drive Base Path:", sharedDrivePath);
+
+    // Build the correct client folder path
     const gDriveClientPath = path.join(sharedDrivePath, clientName);
     console.log("📂 Client Path in G Drive:", gDriveClientPath);
 
-    // 🚀 Skip checking if the client folder exists and create it directly
+    // Ensure the client folder exists
     await fs.promises.mkdir(gDriveClientPath, { recursive: true });
     console.log("✅ Ensured client folder exists:", gDriveClientPath);
 
-    // ✅ Proceed with copying the project
+    // Construct the final project path
     const gDriveProjectPath = path.join(gDriveClientPath, newProjectName);
-    
+    console.log("📂 Final Project Path in G Drive:", gDriveProjectPath);
+
+    // Check if project already exists before copying
     if (!fs.existsSync(gDriveProjectPath)) {
         await copyDirectory(newProjectPath, gDriveProjectPath);
         console.log("✅ Successfully copied to G Drive:", gDriveProjectPath);
@@ -1136,8 +1148,6 @@ async function copyToGDrive(clientName, newProjectPath, newProjectName, destinat
         return false;
     }
 }
-
-
 
 
 document.addEventListener('DOMContentLoaded', function () {
