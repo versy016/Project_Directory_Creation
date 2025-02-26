@@ -1113,35 +1113,53 @@ document.getElementById('createClientButton').addEventListener('click', () => {
 document.getElementById('createSyncFolderPair').addEventListener('change', (event) => {
     document.getElementById('directioncell').style.display = event.target.checked ? 'flex' : 'none';
 });
-async function copyToGDrive(clientName, newProjectPath, newProjectName) {
-    const sharedDrivePath = getSharedDrivePath(clientName);
-    console.log(sharedDrivePath);
+async function copyToGDrive(clientName, newProjectPath, newProjectName, destinationPath = null) {
+    let sharedDrivePath = destinationPath || getSharedDrivePath(clientName); // Use custom path if provided
+    console.log("📂 Shared Drive Path:", sharedDrivePath);
+
     const gDriveClientPath = path.join(sharedDrivePath, clientName);
-    console.log(sharedDrivePath);
+    console.log("📂 Client Path in G Drive:", gDriveClientPath);
 
-    // Check if client directory exists in the shared drive
-    if (fs.existsSync(gDriveClientPath)) {
-        const gDriveProjectPath = path.join(gDriveClientPath, newProjectName);
+    // 🚀 Skip checking if the client folder exists and create it directly
+    await fs.promises.mkdir(gDriveClientPath, { recursive: true });
+    console.log("✅ Ensured client folder exists:", gDriveClientPath);
 
-        // Check if the project already exists
-        if (!fs.existsSync(gDriveProjectPath)) {
-            // Copy the project to the shared drive
-            await copyDirectory(newProjectPath, gDriveProjectPath);
-            return true;
-        } else {
-            ipcRenderer.send("show-custom-alert", "Project already exists in the shared drive.");
-            return false;
-        }
+    // ✅ Proceed with copying the project
+    const gDriveProjectPath = path.join(gDriveClientPath, newProjectName);
+    
+    if (!fs.existsSync(gDriveProjectPath)) {
+        await copyDirectory(newProjectPath, gDriveProjectPath);
+        console.log("✅ Successfully copied to G Drive:", gDriveProjectPath);
+        return true;
     } else {
-        // Client does not exist in the shared drive
-        const createClient = confirm(`Client "${clientName}" does not exist in the shared drive. Do you want to create it?`);
-        if (createClient) {
-            await fs.promises.mkdir(gDriveClientPath, { recursive: true });
-            await copyDirectory(newProjectPath, path.join(gDriveClientPath, newProjectName));
-            return true;
-        }
+        ipcRenderer.send("show-custom-alert", "Project already exists in the shared drive.");
+        return false;
     }
 }
+
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const copyToGDriveLabel = document.querySelector('label[for="copyToGDrive"]');
+    const creationTypeRadios = document.querySelectorAll('input[name="creationType"]');
+
+    function updateGDriveLabel() {
+        const selectedType = document.querySelector('input[name="creationType"]:checked').value;
+        if (selectedType === 'quoteDirectory') {
+            copyToGDriveLabel.textContent = 'Copy quote to G Drive';
+        } else {
+            copyToGDriveLabel.textContent = 'Copy project to G Drive';
+        }
+    }
+
+    creationTypeRadios.forEach(radio => {
+        radio.addEventListener('change', updateGDriveLabel);
+    });
+
+    updateGDriveLabel(); // Initialize on page load
+});
+
 
 document.getElementById('enterManually').addEventListener('click', function(event) {
             event.preventDefault();
@@ -1294,12 +1312,23 @@ document.getElementById('btnSubmit').addEventListener('click', async (event) => 
         }
         
         if (copyToGDriveCheckbox.checked && !projectExistsInGDrive) {
-            // Copy the project to G Drive
-            const copiedToGDrive = await copyToGDrive(clientName, newProjectPathC, newProjectName );
-            if (copiedToGDrive) {
-               ipcRenderer.send('show-custom-alert', 'Project successfully copied to G Drive.');
+            let destinationPathG = '';
+
+            if (selectedCreationType === 'clientProject') {
+                // ✅ Copy to regular G Drive project folder
+                destinationPathG = path.join(clientFolderPathG, newProjectName);
+                ipcRenderer.send('show-custom-alert', 'Project successfully copied to G Drive.');
+            } else if (selectedCreationType === 'quoteDirectory') {
+                // ✅ Copy quotes to tender folder area
+                destinationPathG = path.join('G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients', clientName, newProjectName);
+                ipcRenderer.send('show-custom-alert', 'Quote successfully copied to Tender folder in G Drive.');
+            }
+
+            if (destinationPathG) {
+                await copyToGDrive(clientName, newProjectPathC, newProjectName, destinationPathG);
             }
         }
+
 
         // Additional logic if Create Sync Folder Pair is checked...
         if (createSyncFolderPairCheckbox.checked) {
