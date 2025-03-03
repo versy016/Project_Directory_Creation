@@ -14,29 +14,47 @@ autoUpdater.disableWebInstaller = true; // Disable web installer
 autoUpdater.autoInstallOnAppQuit = true;
 
 
-autoUpdater.checkForUpdatesAndNotify();
-console.log('Checking for update...');
-
 autoUpdater.on('update-available', () => {
-  console.log('Update available!');
-    autoUpdater.downloadUpdate(); // Manually trigger the download
+  console.log('Update available! Downloading...');
+  // This triggers the actual download
+  autoUpdater.downloadUpdate();
 
+  // Also let the renderer know that an update was found
+  mainWindow.webContents.send('update-available');
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  // progress has properties like total, transferred, percent, bytesPerSecond
+  mainWindow.webContents.send('download-progress', progress);
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('Error in auto-updater:', err);
+  mainWindow.webContents.send('update-error', err.message);
 });
 
 autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
     // Optionally notify the user of an impending update
-    autoUpdater.quitAndInstall();  // This will quit the app and install the update
+  //autoUpdater.quitAndInstall();  // This will quit the app and install the update
+   mainWindow.webContents.send('update-downloaded', {
+    releaseNotes,
+    releaseName
+  });
 });
 
+// main.js
+ipcMain.on('install-update', () => {
+  console.log('User chose to install the update.');
+  autoUpdater.quitAndInstall();
+});
 
 
 autoUpdater.on('update-not-available', () => {
   console.log('No updates available');
 });
 
-autoUpdater.on('error', (error) => {
-  console.error('Error in auto-updater:', error);
-});
+
+
 
 
 function createWindow() {

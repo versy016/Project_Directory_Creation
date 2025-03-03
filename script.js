@@ -309,36 +309,61 @@ ipcRenderer.on('api-key', (event, apiKey) => {
   script.defer = true;
   document.head.appendChild(script);
 });
-ipcRenderer.on('update_available', () => {
-  ipcRenderer.send('show-dialog', { type: 'info', message: 'A new update is available. Downloading now...' });
+ipcRenderer.on('update-available', () => {
+  // Show some alert that an update is available and that download has started
+  ipcRenderer.send('show-custom-alert', 'A new update is available. Downloading now...');
 });
-
 function refreshApp() {
     ipcRenderer.send('refresh-app');
 }
 
-ipcRenderer.on('update_downloaded', () => {
-  // Show confirm dialog to restart the application and install the update
-  ipcRenderer.send('show-confirm-dialog', {
-    message: 'Update downloaded. It will be installed on restart. Restart now?'
-  });
-});
-ipcRenderer.on('show-confirm-dialog', (event, args) => {
-  const response = dialog.showMessageBoxSync({
-    type: 'question',
-    title: 'Install Update',
-    message: args.message,
-    buttons: ['Restart', 'Later'],
-    defaultId: 0,
-    cancelId: 1
-  });
+//------------------------------------------------------
+//  UPDATE EVENTS (AUTO UPDATER)
+//------------------------------------------------------
 
-  // Check response (Restart is at index 0)
-  if (response === 0) {
-    autoUpdater.quitAndInstall();  // This will quit and install the update
-  }
+// 1) When update is available
+ipcRenderer.on('update-available', () => {
+  // Show the container
+  document.getElementById('updateContainer').style.display = 'block';
+  
+  // Update the message
+  document.getElementById('updateMessage').textContent = 'A new update is available. Downloading now...';
+  
+  // Show the progress bar (initially at 0%)
+  const progressBar = document.getElementById('updateProgressBar');
+  progressBar.value = 0;
+  progressBar.style.display = 'inline'; // or 'block'
 });
 
+// 2) Download progress
+ipcRenderer.on('download-progress', (event, progressObj) => {
+  // e.g. progressObj.percent => 0 - 100
+  const progressBar = document.getElementById('updateProgressBar');
+  progressBar.value = progressObj.percent;
+
+  // Update the message with more detail
+  document.getElementById('updateMessage').textContent =
+    `Downloading update... ${progressObj.percent.toFixed(1)}% complete`;
+});
+
+// 3) Update downloaded
+ipcRenderer.on('update-downloaded', (event, { releaseNotes, releaseName }) => {
+  // Show a final message
+  document.getElementById('updateMessage').textContent = 
+    `Update "${releaseName}" is downloaded. Click "Install Update" to proceed.`;
+  
+  // Hide the progress bar
+  document.getElementById('updateProgressBar').style.display = 'none';
+
+  // Show the "Install Update" button
+  const installBtn = document.getElementById('installUpdateButton');
+  installBtn.style.display = 'inline';
+});
+
+// 4) Handle user clicking "Install Update"
+document.getElementById('installUpdateButton').addEventListener('click', () => {
+  ipcRenderer.send('install-update'); // Tells main process to call autoUpdater.quitAndInstall()
+});
 
 
 // Function to fetch tenders from your API and format them for Algolia

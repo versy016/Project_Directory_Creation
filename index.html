@@ -13,7 +13,18 @@
 
 <body>
 
+    <div id="updateContainer" style="display: none;">
+        <h3>Application Update</h3>
 
+        <!-- Display a message, e.g. "Downloading... 50%" -->
+        <p id="updateMessage"></p>
+
+        <!-- Progress bar to reflect download progress (0–100) -->
+        <progress id="updateProgressBar" max="100" value="0" style="display: none;"></progress>
+
+        <!-- Button to install the update once it's downloaded -->
+        <button id="installUpdateButton" style="display: none;">Install Update</button>
+    </div>
     <div class="info-icon-container">
         <svg id="infoIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"
             fill="#000000">
