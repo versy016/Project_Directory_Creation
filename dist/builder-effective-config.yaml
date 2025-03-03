@@ -1,0 +1,46 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.engsurveys.com.au.projectdirectorycreation
+productName: Project_directory_Creation
+files:
+  - filter:
+      - '**/*'
+      - PDIR_Defaults
+      - ACCDIR_Defaults
+      - SyncSettings.ffs_gui
+      - SyncSettings_Quotes.ffs_gui
+      - '!**/*.ts'
+      - '!*.code-workspace'
+      - '!LICENSE.md'
+      - '!package.json'
+      - '!package-lock.json'
+      - '!src/'
+      - '!tsconfig.json'
+      - '!tslint.json'
+extraFiles:
+  - from: ./SyncSettings_Quotes.ffs_gui
+    filter:
+      - '**/*'
+  - from: ./SyncSettings.ffs_gui
+    filter:
+      - '**/*'
+  - from: ./SyncSettingsJdrive.ffs_gui
+    filter:
+      - '**/*'
+win:
+  target: nsis
+  icon: pdc.ico
+portable:
+  artifactName: ${productName}-${version}-${os}.${ext}
+nsis:
+  oneClick: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  installerIcon: pdc.ico
+  uninstallerIcon: pdc.ico
+  installerHeaderIcon: pdc.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Project Directory Creation
+electronVersion: 30.0.1
