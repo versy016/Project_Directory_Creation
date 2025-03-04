@@ -9,9 +9,10 @@ autoUpdater.logger = require("electron-log");
 autoUpdater.logger.transports.console.level = "info";
 
 autoUpdater.logger.transports.file.level = "info";
-autoUpdater.autoDownload = true; // Example of another option
+autoUpdater.autoDownload = false; // Example of another option
 autoUpdater.disableWebInstaller = true; // Disable web installer
 autoUpdater.autoInstallOnAppQuit = true;
+app.disableHardwareAcceleration();
 
 
 autoUpdater.on('update-available', () => {
@@ -81,6 +82,9 @@ function createWindow() {
   });
 }
 
+// or to forcibly skip blockmap-based updates:
+process.env.ELECTRON_BUILDER_NO_DELTA = '1';
+
 
 app.on('ready', async () => {
     if (process.env.NODE_ENV === 'development') {
@@ -88,7 +92,6 @@ app.on('ready', async () => {
     } else {
         autoUpdater.updateConfigPath = path.join(__dirname, 'app-update.yml');
     }
-
     autoUpdater.checkForUpdatesAndNotify();
  /*
   const targetDir = 'C:\\Freefilesyncfiles'; // Target directory where files are stored

@@ -29,13 +29,16 @@ extraFiles:
     filter:
       - '**/*'
 win:
-  target: nsis
+  target:
+    - nsis
+    - portable
   icon: pdc.ico
 portable:
   artifactName: ${productName}-${version}-${os}.${ext}
 nsis:
   oneClick: false
   allowElevation: true
+  perMachine: false
   allowToChangeInstallationDirectory: true
   installerIcon: pdc.ico
   uninstallerIcon: pdc.ico
