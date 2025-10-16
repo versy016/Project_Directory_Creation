@@ -53,26 +53,34 @@ function loadMajorClients() {
 loadMajorClients();
 
 
-function getSharedDrivePath(clientName) {
+function getSharedDrivePath(clientNameRaw) {
+    // Always trim and uppercase clientName for matching
+    const clientName = (clientNameRaw || '').trim();
     if (!clientName || typeof clientName !== 'string') {
-        console.error('Invalid client name:', clientName);
+        console.error('Invalid client name:', clientNameRaw);
         return null;
     }
 
     const driveBasePath = 'G:/Shared drives';
+    const clientNameUpper = clientName.toUpperCase();
 
-    // ✅ If client is a major client, return only the base path
-    if (majorClients.includes(clientName.toUpperCase())) {
+    // If client is a major client, return only the base path
+    if (majorClients.includes(clientNameUpper)) {
+        console.log(`[getSharedDrivePath] Major client detected: ${clientName} → ${driveBasePath}`);
         return driveBasePath;
     }
 
-    // ✅ Categorize other clients based on the first letter
+    // Categorize other clients based on the first letter
     const firstLetter = clientName[0].toUpperCase();
     if (firstLetter >= 'A' && firstLetter <= 'Z') {
+        // Warn if this looks like a major client but isn't found
+        if (clientName.split(' ').length > 1) {
+            console.warn(`[getSharedDrivePath] WARNING: '${clientName}' not found in majorClients, falling back to _${firstLetter}. Check for typos or update majorClients.json if needed.`);
+        }
         return `${driveBasePath}/_${firstLetter}`;
     }
 
-    // ✅ Default fallback for unrecognized cases
+    // Default fallback for unrecognized cases
     return `${driveBasePath}/_Misc`;
 }
 
@@ -1716,6 +1724,7 @@ async function populateProjects(projectList, elementId, clientName) {
             }
             
             let copyButtonHTML = '';
+            let foldersButtonHTML = '';
             // Logic to enable copy button based on selected creation type and where the project exists
             if (selectedCreationType === 'clientProject' && (existsInCPrimary !== existsInGPrimary)) {
                 // Handle client project copy logic
@@ -1723,15 +1732,18 @@ async function populateProjects(projectList, elementId, clientName) {
                 let copyFromPath = existsInCPrimary ? basePathCPrimary : basePathGPrimary;
                 let copyToPath = existsInCPrimary ? basePathGPrimary : basePathCPrimary;
                 copyButtonHTML = generateCopyButtonHTML(project, copyFromPath, copyToPath, copyTo);
+                foldersButtonHTML = generateFoldersOnlyButtonHTML(project, copyFromPath, copyToPath, copyTo);
             } else if (selectedCreationType === 'quoteDirectory' && (existsInCQuotes !== existsInGQuotes)) {
                 // Handle quote directory copy logic
                 let copyTo = existsInCQuotes ? drive_symbol : 'C';
                 let copyFromPath = existsInCQuotes ? basePathCQuotes : basePathGQuotes;
                 let copyToPath = existsInCQuotes ? basePathGQuotes : basePathCQuotes;
                 copyButtonHTML = generateCopyButtonHTML(project, copyFromPath, copyToPath, copyTo);
+                foldersButtonHTML = generateFoldersOnlyButtonHTML(project, copyFromPath, copyToPath, copyTo);
             }
             if (copyButtonHTML === '' ) {
                 copyButtonHTML = `<td><button class="copyToButton" style="padding: 0;" ></button></td>`;
+                foldersButtonHTML = `<td><button class="copyFoldersButton" style="padding: 0;" ></button></td>`;
             }
 
 
@@ -1747,6 +1759,7 @@ async function populateProjects(projectList, elementId, clientName) {
                         <td><button class="open-folder-btn" data-path="${dataPath}">Open</button></td>
                         ${projectActionHTML}
                         ${copyButtonHTML}
+                        ${foldersButtonHTML}
                      </tr>`;
         }));
     
@@ -1779,6 +1792,28 @@ async function copyProject(projectName, fromPath, toPath) {
     } catch (error) {
         console.error(`Error copying project '${projectName}':`, error);
         // Ensure the copying progress window is closed even if an error occurs
+        await ipcRenderer.invoke('close-copying-in-progress');
+    }
+}
+
+// Generate a button that copies only the folder structure (no files)
+function generateFoldersOnlyButtonHTML(project, copyFromPath, copyToPath, copyTo) {
+    const safeCopyFromPath = copyFromPath.replace(/\\/g, '\\\\');
+    const safeCopyToPath = copyToPath.replace(/\\/g, '\\\\');
+    return `<td><button class="copyFoldersButton" style="font-size: 14px; color: white; background-color: #607D8B; cursor: pointer; border: none; padding: 5px 10px;" onclick="copyFoldersOnly('${project}', '${safeCopyFromPath}', '${safeCopyToPath}')">Folders to ${copyTo}</button></td>`;
+}
+
+// Copy only directories for a project (no files)
+async function copyFoldersOnly(projectName, fromPath, toPath) {
+    const clientInput = document.getElementById('clientInput').value.trim();
+    try {
+        await ipcRenderer.invoke('show-copying-in-progress');
+        await ipcRenderer.invoke('copy-folders-only', { projectName, fromPath, toPath });
+        await ipcRenderer.invoke('close-copying-in-progress');
+        searchForClient(clientInput, true);
+        console.log(`Folders for project '${projectName}' have been successfully created at destination.`);
+    } catch (error) {
+        console.error(`Error copying folders for project '${projectName}':`, error);
         await ipcRenderer.invoke('close-copying-in-progress');
     }
 }

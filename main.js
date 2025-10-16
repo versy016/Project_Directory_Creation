@@ -185,14 +185,38 @@ app.whenReady().then(() => {
 ipcMain.handle('copy-directory', async (event, { projectName, fromPath, toPath }) => {
     const sourcePath = path.join(fromPath, projectName);
     const destinationPath = path.join(toPath, projectName);
-    
     try {
         console.log(`Starting to copy project '${projectName}' from '${sourcePath}' to '${destinationPath}'...`);
+        // Ensure the parent directory exists
+        await fs.ensureDir(path.dirname(destinationPath));
         await fs.copy(sourcePath, destinationPath);
         console.log(`Project '${projectName}' has been successfully copied.`);
     } catch (error) {
         console.error(`Error copying project '${projectName}':`, error);
         throw error; // Rethrow the error to be caught in the renderer process
+    }
+});
+// Copy only the folder structure (no files)
+ipcMain.handle('copy-folders-only', async (event, { projectName, fromPath, toPath }) => {
+    const sourcePath = path.join(fromPath, projectName);
+    const destinationPath = path.join(toPath, projectName);
+    try {
+        console.log(`Starting folder-structure copy for '${projectName}' from '${sourcePath}' to '${destinationPath}'...`);
+        await fs.ensureDir(path.dirname(destinationPath));
+        // Copy directories only; exclude files via filter
+        await fs.copy(sourcePath, destinationPath, {
+            filter: (src) => {
+                try {
+                    return fs.lstatSync(src).isDirectory();
+                } catch (e) {
+                    return false;
+                }
+            }
+        });
+        console.log(`Folder structure for '${projectName}' copied successfully.`);
+    } catch (error) {
+        console.error(`Error copying folder structure for '${projectName}':`, error);
+        throw error;
     }
 });
 ipcMain.handle('show-copying-in-progress', async () => {
