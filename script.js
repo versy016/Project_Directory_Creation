@@ -355,17 +355,23 @@ ipcRenderer.on('download-progress', (event, progressObj) => {
 });
 
 // 3) Update downloaded
-ipcRenderer.on('update-downloaded', (event, { releaseNotes, releaseName }) => {
+ipcRenderer.on('update-downloaded', (event, payload = {}) => {
+  const { version, releaseName } = payload;
+  const label = version || releaseName || 'new version';
+
   // Show a final message
-  document.getElementById('updateMessage').textContent = 
-    `Update "${releaseName}" is downloaded. Click "Install Update" to proceed.`;
-  
+  const msgEl = document.getElementById('updateMessage');
+  if (msgEl) {
+    msgEl.textContent = `Update "${label}" is downloaded. Click "Install Update" to proceed.`;
+  }
+
   // Hide the progress bar
-  document.getElementById('updateProgressBar').style.display = 'none';
+  const progressBar = document.getElementById('updateProgressBar');
+  if (progressBar) progressBar.style.display = 'none';
 
   // Show the "Install Update" button
   const installBtn = document.getElementById('installUpdateButton');
-  installBtn.style.display = 'inline';
+  if (installBtn) installBtn.style.display = 'inline';
 });
 
 // 4) Handle user clicking "Install Update"

@@ -34,10 +34,11 @@ autoUpdater.on('error', (err) => {
   mainWindow.webContents.send('update-error', err.message);
 });
 
-autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-    // Optionally notify the user of an impending update
-  //autoUpdater.quitAndInstall();  // This will quit the app and install the update
-   mainWindow.webContents.send('update-downloaded', {
+// electron-updater emits 'update-downloaded' with an UpdateInfo object
+autoUpdater.on('update-downloaded', (info) => {
+  const { version, releaseNotes, releaseName } = info || {};
+  mainWindow.webContents.send('update-downloaded', {
+    version,
     releaseNotes,
     releaseName
   });
