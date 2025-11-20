@@ -800,9 +800,10 @@ async function searchForClient(clientName, refresh) {
     
      
 
-    // Populate the UI with the results
-    populateProjects(combinedCProjects, 'cDriveProjects', cpath);
-    populateProjects(combinedGProjects, 'gDriveProjects', gpath);
+    // Populate the UI with the results. Wait for tables to finish rendering
+    // before drawing and aligning the middle sync controls.
+    await populateProjects(combinedCProjects, 'cDriveProjects', cpath);
+    await populateProjects(combinedGProjects, 'gDriveProjects', gpath);
     populateDirectionColumn(sortedCommonProjects, xmlConfigData); // Pass only the common, since they're synced
     
     
@@ -1887,7 +1888,7 @@ function populateDirectionColumn(commonProjects, configData) {
                 case '>': directionValue = 'Update Right'; break;
                 case '<': directionValue = 'Update Left'; break;
                 case '<>': directionValue = 'Update Both'; break;
-                default: directionValue = ''; // Default value or placeholder if no config is found
+                default: directionValue = 'Update Both'; // Default value if no config is found
             }
 
             // Render the dropdown menu with appropriate selected value and sync checkbox
@@ -1903,6 +1904,9 @@ function populateDirectionColumn(commonProjects, configData) {
                     </label>
                 </div>`;
         }).join('');
+
+        // After rendering, align the controls with the C-drive rows
+        requestAnimationFrame(alignDirectionCellsWithRows);
     }
 }
 
@@ -1924,6 +1928,49 @@ function collectSyncSettings() {
     });
     return projects;
 }
+
+// Keep the middle sync controls vertically aligned with the C-drive table rows
+function alignDirectionCellsWithRows() {
+    const directionColumn = document.getElementById('directionColumn');
+    const cDriveTable = document.getElementById('cDriveTable');
+
+    if (!directionColumn || !cDriveTable) {
+        return;
+    }
+
+    const cDriveRows = Array.from(cDriveTable.querySelectorAll('tbody tr'));
+    const directionCells = Array.from(directionColumn.querySelectorAll('.direction-cell'));
+
+    if (!cDriveRows.length || !directionCells.length) {
+        return;
+    }
+
+    // Ensure the direction column is tall enough
+    directionColumn.style.height = `${cDriveTable.offsetHeight}px`;
+
+    const columnRect = directionColumn.getBoundingClientRect();
+    const count = Math.min(cDriveRows.length, directionCells.length);
+
+    for (let i = 0; i < count; i++) {
+        const row = cDriveRows[i];
+        const cell = directionCells[i];
+
+        const rowRect = row.getBoundingClientRect();
+        const cellHeight = cell.offsetHeight || 24;
+
+        // Compute top so the control is vertically centered on the row
+        const top =
+            rowRect.top - columnRect.top +
+            (row.offsetHeight - cellHeight) / 2;
+
+        cell.style.top = `${top}px`;
+    }
+}
+
+// Re-align on window resize so rows and controls stay in sync
+window.addEventListener('resize', () => {
+    requestAnimationFrame(alignDirectionCellsWithRows);
+});
 // Helper function to parse existing folder pairs into a set
 function parseExistingPairsToSet(existingXml) {
     console.log(existingXml);

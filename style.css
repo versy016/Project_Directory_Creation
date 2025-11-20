@@ -275,18 +275,31 @@ button {
     text-align: center;
 }
 .direction-dropdown {
-    width: 50px; /* Set a fixed width for the dropdown */
-    margin-right: 1rem;
+    width: 3rem; /* Compact and fixed width for the dropdown */
+    margin-right: 0.4rem;
+    padding: 2px 4px;
+    text-align: center;
+    font-size: 0.8rem;
 }
 .direction-column{
     margin-top: 6rem;
-
+    position: relative; /* Needed for absolutely positioned sync controls */
+    flex: 0 0 110px; /* Fixed middle column width so controls don't overlap */
 }
 .direction-cell {
     display: flex;
     align-items: center;
-    justify-content: center;
-    height: 47px; /* Adjust this to match the height of your project rows */
+    justify-content: flex-start;
+    white-space: nowrap;
+    position: absolute; /* Positioned in JS to align with rows */
+    left: 50%; /* Center horizontally within the middle column */
+    transform: translateX(-50%);
+    box-sizing: border-box;
+}
+
+.direction-cell label {
+    margin: 0; /* Override global label margin so it doesn't push into G column */
+    font-size: 0.8rem;
 }
 
 .project-table {
