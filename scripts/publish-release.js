@@ -86,6 +86,9 @@ async function api(pathname, options = {}) {
   }
 
   if (!response.ok) {
+    if (options.allowStatus && options.allowStatus.includes(response.status)) {
+      return null;
+    }
     const detail = body && body.message ? body.message : response.statusText;
     die(`GitHub API ${response.status} on ${pathname}: ${detail}`);
   }
@@ -139,7 +142,46 @@ async function main() {
 
   ok(`found draft ${TAG}`);
 
+  // --- the tag must already exist ------------------------------------------
+  //
+  // A draft carries a tag NAME, not a tag. If the tag does not exist when you
+  // publish, GitHub creates it from the release's target_commitish -- the head of
+  // the default branch at that moment. That is not necessarily the commit the
+  // installer was built from, so the release would point at code nobody shipped.
+  // Pushing the tag first makes it unambiguous.
+  //
+  // A draft created before its tag was pushed shows an "untagged-<sha>" URL until
+  // it is published; that alone is harmless once the tag exists.
+  const ref = await api(`/repos/${owner}/${repo}/git/ref/tags/${TAG}`, {
+    allowStatus: [404],
+  });
+
+  if (!ref) {
+    fail(
+      `the tag ${TAG} does not exist on GitHub -- publishing would create it at ` +
+        `the head of the default branch, which may not be what you built.\n` +
+        `        Push it first:  git push origin ${TAG}`
+    );
+  } else {
+    // An annotated tag points at a tag object; dereference it to the commit.
+    let sha = ref.object.sha;
+    if (ref.object.type === 'tag') {
+      const tagObject = await api(`/repos/${owner}/${repo}/git/tags/${sha}`);
+      sha = tagObject.object.sha;
+    }
+    ok(`tag ${TAG} exists on GitHub, at ${sha.slice(0, 7)}`);
+  }
+
   // --- the assets auto-update needs ----------------------------------------
+
+  // GitHub does not allow spaces in an asset name, so the NSIS artifact
+  // "Project_directory_Creation Setup 1.3.0.exe" arrives as
+  // "Project_directory_Creation-Setup-1.3.0.exe". Comparing against the local
+  // filename reports every asset missing on a perfectly good draft -- which is
+  // exactly the false alarm that would train someone to ignore this check.
+  // Spaces and hyphens are therefore treated as the same separator. Dots are
+  // NOT, so .exe and .exe.blockmap stay distinct.
+  const normalise = (name) => name.toLowerCase().replace(/[\s-]+/g, '-');
 
   const required = [
     `${PRODUCT} Setup ${VERSION}.exe`,
@@ -147,31 +189,36 @@ async function main() {
     'latest.yml',
   ];
 
-  const uploaded = new Map(release.assets.map((asset) => [asset.name, asset]));
+  // Not required by the updater, but it is the rollback copy.
+  const portable = `${PRODUCT}-${VERSION}-win.exe`;
+
+  const uploaded = new Map(release.assets.map((asset) => [normalise(asset.name), asset]));
 
   for (const name of required) {
-    const asset = uploaded.get(name);
+    const asset = uploaded.get(normalise(name));
     if (!asset) {
       fail(`missing asset: ${name} -- clients cannot update without it`);
     } else if (asset.state !== 'uploaded') {
-      fail(`asset ${name} is in state "${asset.state}", not "uploaded"`);
+      fail(`asset ${asset.name} is in state "${asset.state}", not "uploaded"`);
     } else {
-      ok(`asset present: ${name}`);
+      // Report the name GitHub actually holds, not the one we looked for.
+      ok(`asset present: ${asset.name}`);
     }
   }
 
-  // Not required by the updater, but it is the rollback copy.
-  const portable = `${PRODUCT}-${VERSION}-win.exe`;
-  if (uploaded.has(portable)) {
-    ok(`asset present: ${portable}`);
+  const portableAsset = uploaded.get(normalise(portable));
+  if (portableAsset) {
+    ok(`asset present: ${portableAsset.name}`);
   } else {
     info(`note: ${portable} is not attached -- no portable build to fall back on`);
   }
 
   // A stale asset from an earlier build of the same version is worth knowing about.
-  const unexpected = [...uploaded.keys()].filter(
-    (name) => !required.includes(name) && name !== portable
-  );
+  const accounted = new Set([...required, portable].map(normalise));
+  const unexpected = release.assets
+    .filter((asset) => !accounted.has(normalise(asset.name)))
+    .map((asset) => asset.name);
+
   if (unexpected.length) {
     info(`note: also attached -- ${unexpected.join(', ')}`);
   }
