@@ -41,7 +41,7 @@
 
 
     <!-- Information Modal -->
-    <p>Version 1.1.5</p>
+    <p>Version 1.2.0</p>
 
     <div id="infoModal" class="modal">
         <div class="modal-content">
@@ -209,6 +209,16 @@
                     <div id="clientDropdown" class="dropdown-content"></div>
                 </td>
             </tr>
+            <tr>
+                <td id="projectSearchLabel">Project:</td>
+                <td>
+                    <!-- Find a project when you know its name but not its client.
+                         Selecting one fills in the Client field above. -->
+                    <input type="text" id="projectSearchInput"
+                        placeholder="Search for a project by name...">
+                    <div id="projectSearchDropdown" class="dropdown-content"></div>
+                </td>
+            </tr>
             <tr id="newProjectSection" style="display: none;">
                 <td colspan="2">
                     <label id="newProjectNameid" for="newProjectName">New Project Name:</label>
@@ -272,9 +282,14 @@
                     </div>
                     <div class="newdirection-cell" id="directioncell" style=" margin-left: 10px;">
                         <select class="newdirection-dropdown" style="width: 150px;">
-                            <option value="default">Select Sync Type</option>
+                            <!-- "Update LEft" (capital E) matched no branch in the
+                                 pair generator, so choosing "Sync G To C" wrote a
+                                 pair full of the literal text "undefined" into the
+                                 real .ffs_gui. The placeholder option went too --
+                                 it had the same effect and there is a valid
+                                 default selected. -->
                             <option value="Update Right" selected>Sync C To G</option>
-                            <option value="Update LEft">Sync G To C</option>
+                            <option value="Update Left">Sync G To C</option>
                             <option value="Update Both">Sync Both</option>
                         </select>
                     </div>
@@ -385,6 +400,33 @@
             <label id="switchid" for="driveToggle" class="switch-label">Switch to Sync C & J</label>
         </div>
         <h2 id="Heading">Existing Projects:</h2>
+
+        <!-- Actions on the list, above it. Handlers bind by id, so the position
+             in the document does not matter to them. -->
+        <div class="run-sync-container">
+            <button type="button" id="runSyncButton">Create Folder Pairs</button>
+            <button type="button" id="openfile">Open FreefileSync</button>
+            <button type="button" id="refresh">Refresh</button>
+        </div>
+
+        <!-- Filter and sort. Populated by src/renderer/project-filters. -->
+        <div id="projectViewBar">
+            <div class="filter-sort">
+                <label for="projectSortSelect">Sort:</label>
+                <select id="projectSortSelect">
+                    <option value="yearDesc">Newest first</option>
+                    <option value="yearAsc">Oldest first</option>
+                    <option value="nameAsc">Name (A–Z)</option>
+                    <option value="nameDesc">Name (Z–A)</option>
+                </select>
+                <!-- Named "Reset view" rather than "Refresh": there is already a
+                     Refresh button below that re-reads the drives, and this one
+                     only puts the filter, sort and row count back to default. -->
+                <button type="button" id="projectResetView" class="reset-view">Reset view</button>
+            </div>
+        </div>
+        <div id="projectAtRisk" class="at-risk" style="display: none;"></div>
+
         <!-- Toggle Switch -->
 
         <div class="projects-container">
@@ -421,6 +463,13 @@
                 </table>
             </div>
         </div>
+
+        <!-- Paging. Populated by src/renderer/project-filters. -->
+        <div id="projectPager" class="project-pager" style="display: none;">
+            <button type="button" id="showMoreProjects">Show more</button>
+            <button type="button" id="showAllProjects" style="display: none;">Show all</button>
+            <span id="projectPagerCount"></span>
+        </div>
     </div>
     <!-- Custom Modal for Selecting Projects to Copy -->
     <div id="copyProjectsModal" class="modal">
@@ -442,16 +491,11 @@
             <button id="cancel">Cancel</button>
         </div>
     </div>
-    <div class="run-sync-container">
-        <button type="button" id="runSyncButton" style="margin-top: 1rem;">Create Folder Pairs</button>
-        <button type="button" id="openfile" style="margin-top: 1rem;">Open FreefileSync</button>
-        <button type="button" id="refresh" style="margin-top: 1rem;">Refresh</button>
 
-    </div>
-
-    <!-- Include your JavaScript file -->
-    <script src="script.js"></script>
-    <script src="archiveprojects.js"></script>
+    <!-- The renderer is loaded by preload.js, not by a <script> tag: with
+         contextIsolation enabled a page script has no `require`, so it cannot
+         load src/. The inline scripts below run in the page's main world and
+         reach preload code only through the functions contextBridge exposes. -->
 
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {

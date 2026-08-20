@@ -502,6 +502,155 @@ button:hover {
     scrollbar-width: none;
     /* For Firefox */
 }
+/* Project search: the project name leads, with its client shown alongside so the
+   two are distinguishable at a glance when a name appears under several clients. */
+/* Actions on the project list, sitting above it. There was no rule for this
+   container before -- the spacing came from inline margins on the buttons. */
+.run-sync-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0 14px 0;
+}
+
+/* --- Project table filter + sort bar ------------------------------------- */
+
+#projectViewBar {
+    display: flex;
+    align-items: center;
+    /* Kept together rather than pushed apart: on a 1500px window space-between
+       stranded the sort control ~700px from the chips it belongs with. */
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    margin: 4px 0 10px 0;
+}
+
+.filter-sort {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+}
+
+.filter-sort select {
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.reset-view {
+    background: none;
+    border: 1px solid #ccc;
+    color: #444;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.reset-view:hover {
+    background: #f0f0f0;
+}
+
+.project-pager {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.project-pager button {
+    border: 1px solid #3F51B5;
+    background: #fff;
+    color: #3F51B5;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.project-pager button:hover {
+    background: #eef0fa;
+}
+
+#showAllProjects {
+    border-color: #ccc;
+    color: #444;
+}
+
+#showAllProjects:hover {
+    background: #f0f0f0;
+}
+
+.project-pager #projectPagerCount {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.at-risk {
+    background: #fff4e5;
+    border: 1px solid #ffcc80;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    color: #7a4a00;
+}
+
+/* No width override here on purpose: input[type="text"] is already width:100%,
+   so the Project box matches the Client box above it. */
+
+#projectSearchDropdown li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+#projectSearchDropdown .project-search-name {
+    font-weight: 600;
+}
+
+#projectSearchDropdown .project-search-client {
+    color: #666;
+    font-size: 0.85em;
+    white-space: nowrap;
+    margin-left: auto;
+}
+
+/* Where the project actually lives: Both / C / G (or J on the J-drive toggle).
+   "Both" is the reassuring case, so it is the one that gets colour. */
+#projectSearchDropdown .project-search-drive {
+    flex: none;
+    min-width: 42px;
+    text-align: center;
+    font-size: 0.75em;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    color: #555;
+    background: #f5f5f5;
+}
+
+#projectSearchDropdown .project-search-drive.both {
+    border-color: #a5d6a7;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+#projectSearchDropdown .project-search-empty {
+    color: #888;
+    font-style: italic;
+    cursor: default;
+}
+
+#projectSearchDropdown .project-search-empty:hover {
+    background-color: transparent;
+}
+
 #newProjectNameDropdown.disabled {
     /* Styles for the disabled state */
     background-color: #e0e0e0;

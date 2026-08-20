@@ -4,6 +4,16 @@ let copyingInProgressWindow = null;
 const fs = require('fs-extra'); // Assuming fs-extra is required as fsExtra
 let mainWindow; 
 const { autoUpdater } = require('electron-updater');
+const { roots } = require('./src/config/roots');
+const {
+  ensureGoogleDrive,
+  watchForDrive,
+  isDriveConnected,
+  notConnectedHeadline,
+} = require('./src/main/google-drive');
+const driveStatus = require('./src/main/drive-status-window');
+const { repairSyncConfigs, describeRepairs } = require('./src/services/ffs-repair-service');
+const { showAlert } = require('./src/main/alert-modal');
 autoUpdater.logger = require("electron-log");
 
 autoUpdater.logger.transports.console.level = "info";
@@ -64,10 +74,16 @@ function createWindow() {
     width: 1500,
     height: 1000,
     webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false, 
-          webSecurity: true,
-
+      // The page gets no Node and no require. Everything the renderer needs is
+      // loaded by preload.js, which hands the page a named list of functions via
+      // contextBridge. See the header comment in preload.js before changing this.
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      // Required for the preload itself to keep Node -- Electron sandboxes
+      // renderers by default, which would strip `require` from the preload too.
+      sandbox: false,
+      webSecurity: true,
     }
     });
  
@@ -166,17 +182,155 @@ ipcMain.on('refresh-app', (event) => {
     mainWindow.reload();
 });
 
-app.whenReady().then(() => {
-  const dirPath = 'G:\\Shared drives\\Accounts QT\\__Accounts\\__Clients';
-  const exists = fs.existsSync(dirPath);
+/**
+ * Nearly everything this app does reads or writes the shared drive. When Google
+ * Drive for Desktop is not running the drive is simply absent, and the symptom is
+ * a scatter of "client not found" and copy failures rather than one clear cause.
+ *
+ * The status window opens the moment a missing drive is detected -- BEFORE the
+ * launch attempt -- so the user is told immediately and then watches progress,
+ * rather than staring at nothing for thirty seconds and getting a complaint.
+ */
+function checkGoogleDrive() {
+  const driveRoot = roots.sharedBase;
 
+  if (isDriveConnected(driveRoot)) {
+    console.log('Google Drive: already-connected');
+    return;
+  }
+
+  const headline = notConnectedHeadline(driveRoot);
+  driveStatus.open({ parent: mainWindow, headline });
+
+  ensureGoogleDrive({
+    driveRoot,
+    onStatus: ({ state, executable }) => {
+      if (state === 'launching') {
+        console.log(`Google Drive: launching ${executable}`);
+        driveStatus.update({
+          headline,
+          detail: '',
+          status: 'Starting Google Drive for Desktop…',
+          busy: true,
+        });
+      } else if (state === 'waiting') {
+        driveStatus.update({
+          headline,
+          detail: '',
+          status: 'Connecting to Google Drive…',
+          busy: true,
+        });
+      }
+    },
+  })
+    .then(async (result) => {
+      console.log(`Google Drive: ${result.outcome}`);
+
+      if (!result.connected) {
+        // Say what went wrong, but keep watching. Signing in through the browser
+        // takes as long as it takes, and closing the notice on a timer would
+        // leave a stale warning with no sign of when the drive finally arrives.
+        driveStatus.update({
+          headline,
+          detail: result.message,
+          status: '',
+          busy: false,
+        });
+
+        const appeared = await watchForDrive({
+          driveRoot,
+          shouldStop: () => !driveStatus.isOpen(),
+        });
+
+        if (!appeared) {
+          return; // The user dismissed the notice.
+        }
+      }
+
+      announceConnected(driveRoot);
+    })
+    .catch((error) => {
+      console.error('Google Drive check failed:', error);
+      driveStatus.update({
+        headline,
+        detail: `The Google Drive check failed unexpectedly.\n\n(${error.message})`,
+        status: '',
+        busy: false,
+      });
+    });
+}
+
+/**
+ * The drive is up. The window stays open rather than closing silently, because
+ * the app still needs reloading: `directory-existence` was answered "no" for this
+ * page, so the Quote Directory option is hidden until the renderer asks again.
+ */
+function announceConnected(driveRoot) {
+  console.log('Google Drive: connected');
+  driveStatus.update({
+    headline: `G drive connected (${driveRoot})`,
+    detail: 'Refresh to load your clients, projects and quotes.',
+    status: '',
+    busy: false,
+    connected: true,
+  });
+}
+
+// The Refresh button in the status window.
+ipcMain.on('drive-status-refresh', () => {
+  driveStatus.close();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.reload();
+  }
+});
+
+/**
+ * Repair FreeFileSync folder pairs that were switched to the database-detection
+ * form, which this app cannot read.
+ *
+ * Runs at launch because the damage is invisible until someone notices that no
+ * project shows as synced any more, and by then they have usually already made
+ * decisions based on that. Originals are backed up alongside before anything is
+ * written -- see services/ffs-repair-service.
+ */
+function checkSyncConfigs() {
+  let report;
+
+  try {
+    report = repairSyncConfigs();
+  } catch (error) {
+    console.error('Folder pair scan failed:', error);
+    return;
+  }
+
+  console.log(
+    `Folder pairs: scanned ${report.scanned.length} config(s), ` +
+      `repaired ${report.repaired.reduce((n, entry) => n + entry.pairs.length, 0)} pair(s)`
+  );
+
+  const message = describeRepairs(report);
+  if (message) {
+    createAlertModal(message);
+  }
+}
+
+app.whenReady().then(() => {
   const configPath = path.join(__dirname, 'config.json');
   const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   const apiKey = config.GOOGLE_MAPS_API_KEY;
 
   mainWindow.webContents.on('did-finish-load', () => {
-      mainWindow.webContents.send('directory-existence', exists);
+      // BUG FIX: this was evaluated ONCE at startup and captured in the closure,
+      // so every reload re-sent the original answer. If the app started before
+      // Google Drive was up, the Quote Directory option stayed hidden for the
+      // whole session and Refresh could not bring it back. Checked per load now.
+      const quotesReachable = fs.existsSync(roots.sharedQuotes);
+
+      mainWindow.webContents.send('directory-existence', quotesReachable);
       mainWindow.webContents.send('api-key', apiKey);
+
+      checkGoogleDrive();
+      checkSyncConfigs();
   });
 
 });ipcMain.handle('show-message-box', async (event, options) => {
@@ -223,12 +377,13 @@ ipcMain.handle('copy-folders-only', async (event, { projectName, fromPath, toPat
 ipcMain.handle('show-copying-in-progress', async () => {
   // Create a new BrowserWindow to show copying progress
   if (!copyingInProgressWindow) {
+    // Static text, no scripts -- so it has no business holding Node.
     copyingInProgressWindow = new BrowserWindow({
       width: 400,
       height: 200,
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
+        nodeIntegration: false,
+        contextIsolation: true,
       },
     });
 
@@ -253,69 +408,8 @@ ipcMain.on('focus-fix', () => {
 ipcMain.on('show-custom-alert', (event, message) => {
     createAlertModal(message);
 });
+// The alert modal lives in src/main/alert-modal: it measures its own content, so
+// the multi-line folder-pair report is no longer clipped by a fixed height.
 function createAlertModal(message) {
-  let modal = new BrowserWindow({
-    width: 400,
-    height: 200,
-    parent: mainWindow, // This makes it a modal window.
-    modal: true,
-    show: false,
-    frame: false,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-    }
-  });
- const modalContent = `
-        <style>
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                margin: 0;
-                padding: 30px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                color: #333;
-            }
-            h2 {
-                margin: 0 0 20px 0;
-                font-size: 1.1em;
-                font-weight: bold;
-                color: black;
-            }
-            #closeButton {
-                border: none;
-                background-color: #0078d7;
-                color: white;
-                padding: 6px 10px;
-                margin-top: 20px;
-                border-radius: 5px;
-                font-size: 0.9em;
-                cursor: pointer;
-                outline: none;
-            }
-            #closeButton:hover {
-                background-color: #005fa3;
-            }
-            #closeButton:active {
-                background-color: #004c87;
-            }
-        </style>
-        <body>
-            <h2>${message}</h2>
-            <button id="closeButton" onclick="window.close();">OK</button>
-        </body>
-    `;
-
-
- modal.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(modalContent)}`);
-    modal.once('ready-to-show', () => {
-        modal.show();
-    });
-
-  // Handle window closed
-  modal.on('closed', () => {
-    modal = null;
-  });
+  showAlert(message, { parent: mainWindow });
 }
