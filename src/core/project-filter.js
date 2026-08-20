@@ -1,6 +1,7 @@
 'use strict';
 
 const { extractYearFromProjectName } = require('./project-name');
+const { tokenise } = require('./project-index');
 
 /**
  * Filtering and sorting for the two project tables. Pure: no fs, no DOM.
@@ -71,6 +72,47 @@ function pairedProjectNames(configData) {
     }
 
     return names;
+}
+
+/**
+ * Narrow a partition to the projects matching the search box.
+ *
+ * Applied BEFORE the filter, sort, paging, counts and at-risk warning, so every
+ * number on screen describes the same set of rows the tables are showing. The
+ * alternative -- narrowing only the rendered arrays -- leaves the pager claiming
+ * "showing 3 of 57" while three rows exist, which reads as a paging bug.
+ *
+ * Tokenising matches the search dropdown (core/project-index), so a query that
+ * suggests a project also keeps that project in the tables. Space-separated terms
+ * are AND-ed and order does not matter: "regency 2026" finds
+ * `2026_UP1283_Regency_Rd`.
+ *
+ * @param {{common: string[], onlyC: string[], onlyG: string[]}} partition
+ * @param {string} query raw text from the project search box
+ */
+function narrowPartition(partition, query) {
+    const tokens = tokenise(query);
+    const { common = [], onlyC = [], onlyG = [] } = partition || {};
+
+    if (tokens.length === 0) {
+        return { common, onlyC, onlyG };
+    }
+
+    const keep = (name) => {
+        const haystack = String(name).toLowerCase();
+        return tokens.every((token) => haystack.includes(token));
+    };
+
+    return {
+        common: common.filter(keep),
+        onlyC: onlyC.filter(keep),
+        onlyG: onlyG.filter(keep),
+    };
+}
+
+/** Row count for a partition, counting the way the tables render it. */
+function totalRows({ common = [], onlyC = [], onlyG = [] } = {}) {
+    return Math.max(common.length + onlyC.length, common.length + onlyG.length);
 }
 
 function comparatorFor(sort) {
@@ -144,15 +186,20 @@ function atRiskProjects(partition, paired) {
  * @param {string}  [view.sort]
  * @param {Set<string>} [view.paired]
  * @param {number}  [view.limit] rows per column; 0 or Infinity shows everything
+ * @param {string}  [view.query] search-box text; narrows all three buckets first
  * @returns {{c: string[], g: string[], common: string[], counts: object,
- *           atRisk: string[], total: number, shown: number, hasMore: boolean}}
+ *           atRisk: string[], total: number, shown: number, hasMore: boolean,
+ *           query: string, totalUnfiltered: number}}
  */
 function applyView(
     partition,
-    { filter = FILTERS.ALL, sort = SORTS.YEAR_DESC, paired, limit = 0 } = {}
+    { filter = FILTERS.ALL, sort = SORTS.YEAR_DESC, paired, limit = 0, query = '' } = {}
 ) {
     const pairedNames = paired || new Set();
-    const { common = [], onlyC = [], onlyG = [] } = partition || {};
+
+    // The search text defines the working set; everything below derives from it.
+    const narrowed = narrowPartition(partition, query);
+    const { common, onlyC, onlyG } = narrowed;
 
     const sorted = {
         common: sortProjectsBy(common, sort),
@@ -197,11 +244,16 @@ function applyView(
         c,
         g,
         common: shared.slice(0, cap),
-        counts: countBuckets(partition, pairedNames),
-        atRisk: atRiskProjects(partition, pairedNames),
+        // Counts and the at-risk warning describe the narrowed set, not the whole
+        // client -- see narrowPartition. `totalUnfiltered` is what the search text
+        // is hiding, so the UI can say "4 of 57".
+        counts: countBuckets(narrowed, pairedNames),
+        atRisk: atRiskProjects(narrowed, pairedNames),
         total,
         shown: Math.max(c.length, g.length),
         hasMore: total > cap,
+        query: String(query || '').trim(),
+        totalUnfiltered: totalRows(partition),
     };
 }
 
@@ -211,6 +263,7 @@ module.exports = {
     PAGE_SIZE,
     DEFAULT_VIEW,
     applyView,
+    narrowPartition,
     countBuckets,
     atRiskProjects,
     pairedProjectNames,

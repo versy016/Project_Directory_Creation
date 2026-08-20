@@ -83,6 +83,7 @@ function renderProjectView() {
         filter: state.view.filter,
         sort: state.view.sort,
         limit: state.view.limit,
+        query: state.view.query,
         paired: pairedProjectNames(configData),
     });
 

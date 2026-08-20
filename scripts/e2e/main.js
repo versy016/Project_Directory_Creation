@@ -383,6 +383,9 @@ async function projectSearchNarrowsByClientAndProject() {
 
   // Selecting fills in the client above and runs the normal search.
   await js(`${clientBox}.value = ''`);
+  const picked = await js(
+    `document.querySelector('#projectSearchDropdown li[data-client]').getAttribute('data-project')`
+  );
   await js(`document.querySelector('#projectSearchDropdown li[data-client]').click()`);
   await sleep(1600);
 
@@ -390,10 +393,15 @@ async function projectSearchNarrowsByClientAndProject() {
   // client box wants -- no name-to-reference lookup, unlike the Algolia version.
   check('selecting a project populates the client field with the ES Reference',
     (await js(`${clientBox}.value`)) === 'UPC', await js(`${clientBox}.value`));
-  check('and runs the client search against that folder',
-    (await js(
-      `Array.from(document.querySelectorAll('#cDriveProjects tr td:first-child')).map(td => td.textContent)`
-    )).includes('2026_UPJob'));
+  // The box now holds one project name, so the tables narrow to it -- same rule
+  // as typing. Asserted against the project actually clicked rather than a fixed
+  // name: the dropdown sorts by year then name, so the first row is whichever
+  // project sorts first, not a particular one.
+  const shownAfterPick = await js(
+    `Array.from(document.querySelectorAll('#cDriveProjects tr td:first-child, #gDriveProjects tr td:first-child')).map(td => td.textContent)`
+  );
+  check('and runs the client search, narrowed to the project picked',
+    shownAfterPick.includes(picked), `picked ${picked}, showing ${shownAfterPick.join(', ')}`);
 
   // Clearing the project box must leave the client alone.
   await typeProject('');
@@ -565,6 +573,113 @@ async function pagingRevealsProjectsInSteps() {
   await search('ACME');
 }
 
+/**
+ * The Project search box narrows the C, G and J tables, not just the dropdown.
+ *
+ * ACME in the sandbox: 2024_Shared on both drives, 2023_LocalOnly and 2020_Zulu
+ * on C only, 2022_SharedOnly on G only, and 2021_JOnly on J. That spread is what
+ * makes it possible to prove each column narrows on its own contents rather than
+ * both being driven off the C-drive list.
+ */
+async function searchNarrowsTheDriveTables() {
+  const cRows = `Array.from(document.querySelectorAll('#cDriveProjects tr td:first-child')).map(td => td.textContent)`;
+  const gRows = `Array.from(document.querySelectorAll('#gDriveProjects tr td:first-child')).map(td => td.textContent)`;
+  const input = `document.getElementById('projectSearchInput')`;
+  const noteShown = `document.getElementById('projectQueryNote').style.display !== 'none'`;
+  const noteText = `document.getElementById('projectQueryText').textContent`;
+
+  const typeProject = async (value) => {
+    await js(`${input}.value = ${JSON.stringify(value)}`);
+    await js(`${input}.dispatchEvent(new Event('input'))`);
+    await sleep(800);
+  };
+
+  await js(`document.getElementById('clientInput').value = 'ACME'`);
+  await js(`document.getElementById('searchButton').click()`);
+  await waitFor(`${cRows}.length > 0`, 'the project tables');
+  await sleep(600);
+
+  // Captured rather than hardcoded: earlier scenarios create projects under
+  // ACME, so the starting list is longer here than the sandbox fixture alone.
+  const baseC = await js(cRows);
+  const baseG = await js(gRows);
+  const allC = baseC.join();
+  const allG = baseG.join();
+  const unfilteredRows = Math.max(baseC.length, baseG.length);
+
+  check('the list starts unnarrowed',
+    ['2024_Shared', '2023_LocalOnly', '2020_Zulu'].every((p) => baseC.includes(p)) &&
+      ['2024_Shared', '2022_SharedOnly'].every((p) => baseG.includes(p)),
+    `C=${allC} G=${allG}`);
+  check('and shows no narrowing note', !(await js(noteShown)));
+
+  await typeProject('2024');
+  const yearC = await js(cRows);
+  const yearG = await js(gRows);
+  check('typing narrows the C drive list',
+    yearC.length > 0 && yearC.length < baseC.length && yearC.every((p) => p.includes('2024')),
+    yearC.join());
+  check('and the G drive list',
+    yearG.length > 0 && yearG.every((p) => p.includes('2024')),
+    yearG.join());
+
+  // The columns hold different projects, so this fails if one is driven off the
+  // other's rows rather than each narrowing its own bucket.
+  await typeProject('only');
+  check('each column narrows on its own projects',
+    (await js(cRows)).join() === '2023_LocalOnly' &&
+      (await js(gRows)).join() === '2022_SharedOnly',
+    `C=${(await js(cRows)).join()} G=${(await js(gRows)).join()}`);
+
+  // No two-character threshold here: that guards the drive walk behind the
+  // dropdown, and these rows are already in memory.
+  await typeProject('z');
+  check('one character is enough to narrow the tables',
+    (await js(cRows)).join() === '2020_Zulu' && (await js(gRows)).length === 0,
+    `C=${(await js(cRows)).join()} G=${(await js(gRows)).join()}`);
+  check('the note reports the match count against the full list',
+    (await js(noteShown)) &&
+      new RegExp(`1 of ${unfilteredRows}\\b`).test(await js(noteText)),
+    await js(noteText));
+
+  await typeProject('qqq');
+  check('a query matching nothing empties both tables',
+    (await js(cRows)).length === 0 && (await js(gRows)).length === 0);
+  check('and says so rather than leaving them blank and unexplained',
+    /No projects match/i.test(await js(noteText)), await js(noteText));
+
+  await js(`document.getElementById('projectQueryClear').click()`);
+  await sleep(800);
+  check('Clear empties the search box', (await js(`${input}.value`)) === '');
+  check('and restores both lists in full',
+    (await js(cRows)).join() === allC && (await js(gRows)).join() === allG,
+    `C=${(await js(cRows)).join()} G=${(await js(gRows)).join()}`);
+  check('and hides the note', !(await js(noteShown)));
+
+  // The J drive list narrows the same way.
+  await js(`document.getElementById('driveToggle').checked = true`);
+  await js(`document.getElementById('driveToggle').dispatchEvent(new Event('change'))`);
+  await sleep(1400);
+
+  const baseJ = await js(gRows);
+  check('the J drive lists its own projects',
+    baseJ.includes('2021_JOnly') && baseJ.includes('2024_Shared') &&
+      !baseJ.includes('2022_SharedOnly'),
+    baseJ.join());
+
+  await typeProject('jonly');
+  check('and narrows to a J-only project',
+    (await js(gRows)).join() === '2021_JOnly' && (await js(cRows)).length === 0,
+    `C=${(await js(cRows)).join()} J=${(await js(gRows)).join()}`);
+
+  // Leave the window as it was found -- the scenarios share one renderer.
+  await js(`document.getElementById('projectQueryClear').click()`);
+  await sleep(500);
+  await js(`document.getElementById('driveToggle').checked = false`);
+  await js(`document.getElementById('driveToggle').dispatchEvent(new Event('change'))`);
+  await sleep(1000);
+}
+
 async function invalidProjectNameIsRejected() {
   await js(`document.getElementById('newProjectName').value = 'no-year-here'`);
   const before = alerts.length;
@@ -590,6 +705,7 @@ const SCENARIOS = [
   ['dated transfer folders land in the project', datedTransferFoldersLandInTheProject],
   ['the J drive path', jDriveBehaviour],
   ['project search narrows by client + project', projectSearchNarrowsByClientAndProject],
+  ['project search narrows the drive tables', searchNarrowsTheDriveTables],
   ['an invalid project name is refused', invalidProjectNameIsRejected],
 ];
 

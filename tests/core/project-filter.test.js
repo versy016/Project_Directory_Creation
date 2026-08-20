@@ -9,6 +9,7 @@ const {
     PAGE_SIZE,
     DEFAULT_VIEW,
     applyView,
+    narrowPartition,
     countBuckets,
     atRiskProjects,
     pairedProjectNames,
@@ -258,4 +259,123 @@ test('DEFAULT_VIEW is the documented starting point', () => {
         sort: SORTS.YEAR_DESC,
         limit: PAGE_SIZE,
     });
+});
+
+// ---------------------------------------------------------------------------
+// Narrowing by the project search box.
+// ---------------------------------------------------------------------------
+
+test('narrowPartition filters every bucket, case-insensitively', () => {
+    assert.deepEqual(narrowPartition(PARTITION, 'shared'), {
+        common: ['2024_Shared', '2022_AlsoShared'],
+        onlyC: [],
+        onlyG: ['2021_SharedOnly'],
+    });
+
+    assert.deepEqual(narrowPartition(PARTITION, 'ONLY'), {
+        common: [],
+        onlyC: ['2023_LocalOnly'],
+        onlyG: ['2021_SharedOnly'],
+    });
+});
+
+test('an empty or blank query narrows nothing', () => {
+    for (const query of ['', '   ', null, undefined]) {
+        assert.deepEqual(narrowPartition(PARTITION, query), {
+            common: PARTITION.common,
+            onlyC: PARTITION.onlyC,
+            onlyG: PARTITION.onlyG,
+        });
+    }
+});
+
+test('multiple terms are AND-ed, and order does not matter', () => {
+    // The same rule the search dropdown uses, so a query that suggests a project
+    // also keeps that project in the tables.
+    assert.deepEqual(narrowPartition(PARTITION, 'also shared').common, ['2022_AlsoShared']);
+    assert.deepEqual(narrowPartition(PARTITION, 'shared also').common, ['2022_AlsoShared']);
+    assert.deepEqual(narrowPartition(PARTITION, 'also 2021').common, []);
+});
+
+test('a query narrows both columns and still leads with the shared projects', () => {
+    const view = applyView(PARTITION, { query: 'shared', paired });
+
+    assert.deepEqual(view.c, ['2024_Shared', '2022_AlsoShared']);
+    assert.deepEqual(view.g, ['2024_Shared', '2022_AlsoShared', '2021_SharedOnly']);
+
+    // The alignment invariant has to survive narrowing: the sync column is
+    // positioned against C-drive rows by index.
+    assert.equal(view.c[0], view.g[0]);
+    assert.equal(view.c[1], view.g[1]);
+    assert.deepEqual(view.common, ['2024_Shared', '2022_AlsoShared']);
+});
+
+test('counts and the at-risk warning describe the narrowed set', () => {
+    const all = applyView(PARTITION, { paired });
+    assert.deepEqual(all.atRisk, ['2023_LocalOnly', 'Archive']);
+    assert.equal(all.counts.all, 5);
+
+    const narrowed = applyView(PARTITION, { query: 'only', paired });
+
+    // Otherwise the pager reads "showing 1 of 4" beside a warning about 2
+    // projects, and neither number matches the rows on screen.
+    assert.deepEqual(narrowed.atRisk, ['2023_LocalOnly']);
+    assert.equal(narrowed.counts.all, 2);
+    assert.equal(narrowed.counts.localOnly, 1);
+    assert.equal(narrowed.counts.sharedOnly, 1);
+});
+
+test('totalUnfiltered reports what the query is hiding', () => {
+    const narrowed = applyView(PARTITION, { query: '2024', paired });
+
+    assert.equal(narrowed.total, 1);
+    assert.equal(narrowed.totalUnfiltered, 4);
+    assert.equal(narrowed.query, '2024');
+});
+
+test('a query matching nothing empties both columns rather than falling back', () => {
+    const view = applyView(PARTITION, { query: 'no-such-project', paired });
+
+    assert.deepEqual(view.c, []);
+    assert.deepEqual(view.g, []);
+    assert.deepEqual(view.common, []);
+    assert.equal(view.total, 0);
+    assert.equal(view.hasMore, false);
+    assert.equal(view.totalUnfiltered, 4, 'the client still has projects; they just do not match');
+});
+
+test('the reported query is trimmed, and absent when there is none', () => {
+    assert.equal(applyView(PARTITION, { query: '  2024  ' }).query, '2024');
+    assert.equal(applyView(PARTITION, {}).query, '');
+    assert.equal(applyView(PARTITION, { query: '   ' }).query, '');
+});
+
+test('paging counts the matches, not the whole client', () => {
+    const many = {
+        common: [],
+        onlyC: Array.from({ length: 25 }, (_, i) => '2024_Match' + String(i).padStart(2, '0')),
+        onlyG: ['2024_Other'],
+    };
+
+    const view = applyView(many, { query: 'match', limit: PAGE_SIZE });
+
+    assert.equal(view.total, 25, 'the unmatched G project is not part of the list');
+    assert.equal(view.shown, PAGE_SIZE);
+    assert.equal(view.hasMore, true);
+    assert.ok(!view.c.includes('2024_Other'));
+
+    // Both totals count ROWS -- max(C, G) -- because the columns render side by
+    // side, which is what `total` has always meant. Here C alone is already 25
+    // rows long, so hiding the single G-only project does not shorten the table.
+    // The two numbers in "showing N of M" must measure the same thing.
+    assert.equal(view.totalUnfiltered, 25);
+    assert.equal(applyView(many, {}).total, 25);
+});
+
+test('a query composes with sort rather than overriding it', () => {
+    const oldest = applyView(PARTITION, { query: 'shared', sort: SORTS.YEAR_ASC });
+    assert.deepEqual(oldest.c, ['2022_AlsoShared', '2024_Shared']);
+
+    const byName = applyView(PARTITION, { query: 'shared', sort: SORTS.NAME_ASC });
+    assert.deepEqual(byName.c, ['2022_AlsoShared', '2024_Shared']);
 });

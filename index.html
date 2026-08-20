@@ -41,7 +41,7 @@
 
 
     <!-- Information Modal -->
-    <p>Version 1.2.0</p>
+    <p>Version 1.3.0</p>
 
     <div id="infoModal" class="modal">
         <div class="modal-content">
@@ -423,6 +423,13 @@
                      Refresh button below that re-reads the drives, and this one
                      only puts the filter, sort and row count back to default. -->
                 <button type="button" id="projectResetView" class="reset-view">Reset view</button>
+            </div>
+            <!-- Shown only while the Project search box is narrowing the tables.
+                 That box sits well above the lists, so without this the tables
+                 just look short for no visible reason. -->
+            <div id="projectQueryNote" class="query-note" style="display: none;">
+                <span id="projectQueryText"></span>
+                <button type="button" id="projectQueryClear" class="reset-view">Clear</button>
             </div>
         </div>
         <div id="projectAtRisk" class="at-risk" style="display: none;"></div>

@@ -554,6 +554,29 @@ button:hover {
     background: #f0f0f0;
 }
 
+/* The "narrowed by a search" indicator, next to the sort control. */
+.query-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: #444;
+    background: #eef0fa;
+    border: 1px solid #c5cbe9;
+    border-radius: 4px;
+    padding: 4px 6px 4px 10px;
+}
+
+.query-note.no-match {
+    background: #fdecea;
+    border-color: #f5c2bd;
+    color: #a12d20;
+}
+
+.query-note .reset-view {
+    background: #fff;
+}
+
 .project-pager {
     display: flex;
     align-items: center;

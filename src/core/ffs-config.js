@@ -67,10 +67,12 @@ function parseExistingPairsToSet(existingXml) {
  * (`G:/Shared drives/_A\CLIENT\PROJECT`). FreeFileSync tolerates this; the app's
  * own `includes('G:\\')` checks do not. Do not "fix" without a paired test.
  *
- * BUG (preserved, see README): an unrecognised direction returns undefined paths.
- * The new-project dropdown in index.html:278 emits "Update LEft" (capital E),
- * which matches nothing here and makes the caller throw. Frozen deliberately so
- * the fix is a separate, visible commit.
+ * An unrecognised direction returns undefined paths. That used to be reachable
+ * from the UI -- the new-project dropdown emitted "Update LEft" (capital E),
+ * which matched no branch and wrote a <Pair> containing the literal text
+ * "undefined" into the real SyncSettings.ffs_gui. The typo is fixed, and
+ * generateFolderPairsXml now skips an unrecognised direction with an error
+ * rather than writing it, so a bad value cannot reach a config file again.
  */
 function resolvePairPaths({ creationType, direction, clientName, projectName, selectedDrive }) {
   const suffix = `${clientName}\\${projectName}`;
@@ -116,8 +118,9 @@ function resolvePairPaths({ creationType, direction, clientName, projectName, se
  *
  * DEAD BRANCH (preserved): the first condition compares selectedDrive against a
  * backslash literal that getSharedDrivePath can never produce -- it returns
- * forward-slash paths. So J: pairs are never actually filtered out of the G:
- * config today. Frozen; see README.
+ * forward-slash paths (see the roots note in README.md). So J: pairs are never
+ * actually filtered out of the G: config today. Frozen by test, so that changing
+ * it is a deliberate, reviewable diff rather than an accident.
  */
 function shouldSkipPair(selectedDrive, leftPath, rightPath) {
   if (

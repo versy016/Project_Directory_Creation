@@ -38,6 +38,7 @@ function renderControls(view, mode) {
         return;
     }
 
+    renderQueryNote(view, mode);
     renderPager(view, mode);
 
     // The at-risk warning is not a view, it is a standing risk: a project on the
@@ -58,6 +59,38 @@ function renderControls(view, mode) {
         `${count === 1 ? 'exists' : 'exist'} only on this PC and ${count === 1 ? 'is' : 'are'} ` +
         `not set up to sync.`;
     atRisk.style.display = 'block';
+}
+
+/**
+ * "Showing 4 of 57 projects matching X", with a Clear button.
+ *
+ * The search box is several rows above the tables, so a narrowed list needs to
+ * say so next to the list itself -- otherwise a client with 57 projects showing
+ * 4 rows reads as a bug rather than a filter.
+ */
+function renderQueryNote(view, mode) {
+    const note = document.getElementById('projectQueryNote');
+    const text = document.getElementById('projectQueryText');
+
+    if (!note || !text) {
+        return;
+    }
+
+    if (!view.query) {
+        note.style.display = 'none';
+        note.classList.remove('no-match');
+        text.textContent = '';
+        return;
+    }
+
+    const noun = nounFor(mode);
+    const none = view.total === 0;
+
+    note.classList.toggle('no-match', none);
+    text.textContent = none
+        ? `No ${noun}s match “${view.query}”`
+        : `Showing ${view.total} of ${view.totalUnfiltered} ${noun}s matching “${view.query}”`;
+    note.style.display = 'flex';
 }
 
 /**
@@ -114,6 +147,23 @@ function resetProjectView() {
 }
 
 /**
+ * Drop the search-box narrowing and empty the box itself.
+ *
+ * Reaches for the input by id rather than importing project-search, which owns
+ * it. project-search imports client-search, which imports this module, so the
+ * import would close a cycle -- and this is the same by-id reach project-search
+ * already makes for the client box.
+ */
+function clearProjectQuery() {
+    state.view.query = '';
+
+    const input = document.getElementById('projectSearchInput');
+    if (input) {
+        input.value = '';
+    }
+}
+
+/**
  * @param {{onChange: () => void}} deps re-render callback, injected to keep the
  *   module graph acyclic
  */
@@ -154,7 +204,19 @@ function initProjectFilters(deps = {}) {
     const reset = document.getElementById('projectResetView');
     if (reset) {
         reset.addEventListener('click', () => {
+            // "Default list" includes dropping the search text -- leaving the
+            // tables narrowed after a reset would make the button look broken.
+            clearProjectQuery();
             resetProjectView();
+            onChange();
+        });
+    }
+
+    const clearQuery = document.getElementById('projectQueryClear');
+    if (clearQuery) {
+        clearQuery.addEventListener('click', () => {
+            clearProjectQuery();
+            state.view.limit = PAGE_SIZE;
             onChange();
         });
     }

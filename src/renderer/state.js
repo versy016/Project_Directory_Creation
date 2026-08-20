@@ -49,6 +49,20 @@ const state = {
     view: {
         filter: 'all',
         sort: 'yearDesc',
+
+        /** Rows per column. Kept in step with PAGE_SIZE in core/project-filter. */
+        limit: 10,
+
+        /**
+         * Text from the project search box, narrowing both tables.
+         *
+         * Deliberately NOT part of DEFAULT_VIEW: resetProjectView runs whenever a
+         * different client is searched, and selecting a suggestion searches a new
+         * client -- so resetting the query there would blank the tables' filter
+         * while the search box still showed the text that set it. The Reset view
+         * and Clear buttons clear it explicitly instead.
+         */
+        query: '',
     },
 };
 

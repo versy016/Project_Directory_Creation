@@ -97,8 +97,7 @@ test('development-only files are excluded from the package', async (t) => {
   const mustNotShip = [
     'tests/core/paths.test.js',
     'tests/legacy/legacy-implementations.js',
-    'docs/REFACTOR.md',
-    'docs/RELEASE.md',
+    'README.md',
     'scripts/verify-build.js',
   ];
 

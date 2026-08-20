@@ -5,8 +5,9 @@ const { roots } = require('../config/roots');
 const { QUOTE_DIRECTORY, CLIENT_PROJECT } = require('../core/paths');
 const { filterProjectIndex, driveLabel } = require('../core/project-index');
 const { listProjectsAcrossDrives } = require('../services/fs-repo');
+const { PAGE_SIZE } = require('../core/project-filter');
 const { getSharedDrivePath } = require('./major-clients');
-const { searchForClient } = require('./client-search');
+const { searchForClient, renderProjectView } = require('./client-search');
 
 /**
  * Find a project by name, across both drives.
@@ -162,6 +163,29 @@ function initProjectSearch() {
 
     let searchToken = 0;
 
+    /**
+     * Push the box's text into the table view and redraw the C, G and J lists.
+     *
+     * Synchronous and disk-free -- the tables re-render from the search already in
+     * memory, the same path the sort control uses -- so this keeps up with typing.
+     *
+     * There is deliberately no two-character threshold here, unlike the dropdown
+     * below. That threshold exists to avoid walking both drives for a single
+     * letter; narrowing rows already on screen costs nothing, and a list that
+     * ignored the first keystroke would just look broken.
+     */
+    function narrowTables() {
+        const next = input.value.trim();
+        if (state.view.query === next) {
+            return;
+        }
+
+        state.view.query = next;
+        // A different set of rows, so paging starts from the first page again.
+        state.view.limit = PAGE_SIZE;
+        renderProjectView();
+    }
+
     async function refresh() {
         const mode = currentMode();
         const projectText = input.value.trim();
@@ -209,9 +233,13 @@ function initProjectSearch() {
 
     input.addEventListener('focus', refresh);
 
-    // Clearing the box hides the suggestions. It deliberately does NOT touch the
-    // client field -- only an explicit selection below does that.
-    input.addEventListener('input', refresh);
+    // Typing narrows the tables and re-runs the suggestions. Clearing the box
+    // restores the full list and hides the suggestions -- but deliberately does
+    // NOT touch the client field; only an explicit selection below does that.
+    input.addEventListener('input', () => {
+        narrowTables();
+        refresh();
+    });
 
     // The client is half the filter, so retyping it re-narrows an open list.
     clientInput.addEventListener('input', () => {
@@ -234,6 +262,13 @@ function initProjectSearch() {
         input.value = item.getAttribute('data-project');
         hide();
 
+        // The box now holds one project name, so the tables narrow to it -- the
+        // same rule as typing. Set directly rather than via narrowTables() so the
+        // search below renders once, already narrowed, instead of drawing the
+        // outgoing client's rows first.
+        state.view.query = input.value.trim();
+        state.view.limit = PAGE_SIZE;
+
         clientInput.value = clientReference;
         state.selectedDrive = getSharedDrivePath(clientReference);
         searchForClient(clientReference, true);
@@ -250,6 +285,9 @@ function initProjectSearch() {
             const mode = currentMode();
             input.value = '';
             hide();
+            // Switching mode empties the box, so the tables stop being narrowed
+            // by whatever was typed against the other mode's list.
+            narrowTables();
             if (label) {
                 label.textContent = `${labelFor(mode)}:`;
             }
