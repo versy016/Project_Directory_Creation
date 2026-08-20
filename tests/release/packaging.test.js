@@ -171,6 +171,34 @@ test('publishing is deliberate, not a side effect of building', async (t) => {
     }
   });
 
+  await t.test('flipping a draft to published is never chained onto another script', () => {
+    // release:publish reaches every workstation. It must stay a thing you run on
+    // purpose, never a tail end of a build.
+    for (const [name, script] of Object.entries(pkg.scripts)) {
+      if (name.startsWith('release:publish')) continue;
+      assert.ok(
+        !script.includes('publish-release'),
+        `script "${name}" can publish to users: ${script}`
+      );
+    }
+  });
+
+  await t.test('the publish script cannot run unattended by accident', () => {
+    // The browser step used to be the confirmation. Replacing it with a command
+    // is only safe while the command still refuses to act on its own.
+    const source = fs.readFileSync(path.join(ROOT, 'scripts', 'publish-release.js'), 'utf-8');
+
+    assert.ok(source.includes('process.stdin.isTTY'), 'no check for an attended terminal');
+    assert.ok(
+      source.includes("answer !== VERSION"),
+      'the confirmation does not require the version to be typed'
+    );
+    assert.ok(
+      source.includes('--yes'),
+      'no explicit opt-out flag, so CI would have to fake a TTY'
+    );
+  });
+
   await t.test('building runs the test suite first', () => {
     for (const name of ['dist', 'release:draft']) {
       assert.ok(pkg.scripts[name].includes('npm run verify'), `${name} skips verification`);

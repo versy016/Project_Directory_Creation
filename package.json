@@ -15,7 +15,9 @@
     "pack": "electron-builder --dir --publish never",
     "dist": "npm run verify && cross-env NODE_ENV=production electron-builder --publish never",
     "dist-dev": "cross-env NODE_ENV=development electron-builder --publish never",
-    "release:draft": "npm run verify && cross-env NODE_ENV=production electron-builder --publish always"
+    "release:draft": "npm run verify && cross-env NODE_ENV=production electron-builder --publish always",
+    "release:publish": "node scripts/publish-release.js",
+    "release:publish:check": "node scripts/publish-release.js --dry-run"
   },
   "keywords": [],
   "author": "",

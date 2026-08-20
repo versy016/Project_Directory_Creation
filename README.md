@@ -314,7 +314,17 @@ and only as a *draft* — pressing **Publish** on GitHub is the irreversible ste
 | `npm test` / `npm run pack` / `npm run dist` | no |
 | `npm run verify:build` | no |
 | `npm run release:draft` | no — uploads a **draft** |
-| Pressing *Publish release* on GitHub | **yes, everyone, on next app quit** |
+| `npm run release:publish:check` | no — runs every pre-flight check, publishes nothing |
+| `npm run release:publish` | **yes, everyone, on next app quit** |
+
+The safety mechanism is that publishing is a **separate, deliberate step** from
+building — not that it happens in a browser. `release:publish` therefore does the
+final step from the terminal, but refuses to be casual about it: it checks the
+draft matches this working tree's version and tag, that all three auto-update
+assets finished uploading, and that you are not republishing something already
+out; then it makes you type the version to confirm. With no terminal to ask in it
+fails closed rather than proceeding. A test asserts those guards still exist, and
+another asserts the command is never chained onto a build.
 
 ### Checklist
 
@@ -368,12 +378,28 @@ Use a scratch client. Two flows to be careful with:
 
 **4. Publish**
 
+Build and upload the draft:
+
 ```bash
 npm run release:draft
 ```
 
-Then on GitHub: open the draft, confirm the assets uploaded (`.exe`, `.exe.blockmap`,
-`latest.yml`), write the notes, and only then press Publish.
+If you want release notes on the GitHub release, write them on the draft now —
+the publish step does not add any. Then check what is about to go out:
+
+```bash
+npm run release:publish:check
+```
+
+That reports the draft it found and every asset attached to it, and publishes
+nothing. When it looks right:
+
+```bash
+npm run release:publish
+```
+
+It re-runs the same checks and asks you to type the version to confirm. That is
+the point of no return.
 
 **5. If it goes wrong**
 
