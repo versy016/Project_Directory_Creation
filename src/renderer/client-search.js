@@ -20,6 +20,7 @@ const {
 } = require('../services/fs-repo');
 const { searchIndices } = require('../services/algolia');
 const { getSharedDrivePath } = require('./major-clients');
+const { refreshApp } = require('./update-banner');
 const { populateProjects } = require('./project-tables');
 const { populateDirectionColumn } = require('./sync-controls');
 
@@ -333,13 +334,33 @@ function initClientSearch() {
         }
     });
 
-    document.getElementById('refresh').addEventListener('click', () => {
-        const clientName = document.getElementById('clientInput').value;
-        if (clientName === '') {
-            console.log('refreshed');
+    // Enter in the client box runs the search, which is what the Search button
+    // beside it does. The preventDefault is the point: this input sits inside the
+    // page-wide <form>, and Enter used to implicitly submit it, firing the Create
+    // New Client handler against the live API. See initNewClientForm.
+    document.getElementById('clientInput').addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') {
             return;
         }
-        searchForClient(clientName, true);
+
+        event.preventDefault();
+
+        const clientName = document.getElementById('clientInput').value.trim();
+        if (!clientName) {
+            return;
+        }
+
+        document.getElementById('clientDropdown').innerHTML = '';
+        state.selectedDrive = getSharedDrivePath(clientName);
+        searchForClient(clientName, false);
+    });
+
+    // Reload restarts the whole application rather than re-running the search --
+    // it is the recovery action for anything the in-page refresh cannot fix, such
+    // as G: appearing after launch. main.js answers 'refresh-app' with
+    // mainWindow.reload().
+    document.getElementById('reload').addEventListener('click', () => {
+        refreshApp();
     });
 
     initDriveToggle();

@@ -132,6 +132,25 @@ function initContactLookup() {
 
 function initNewClientForm() {
     document.getElementById('submitClientForm').addEventListener('click', submitClientForm);
+
+    // BUG FIX: pressing Enter in ANY text box created a client.
+    //
+    // index.html wraps the entire page in one <form>, and this form's Submit was
+    // the only type="submit" button in it -- so it was the form's default button.
+    // Implicit submission (Enter in a text field) fires a click on that button,
+    // which ran submitClientForm and POSTed to the LIVE ESE API with every field
+    // blank. The visible symptom was "Error creating client: undefined" after
+    // typing in the client or project search box; the invisible one was a real
+    // write attempt against production on every stray Enter.
+    //
+    // The button is now type="button". This is the belt to that braces: nothing
+    // on the page is submitted the HTML way, so the event is refused outright and
+    // no future type="submit" can reintroduce this.
+    const form = document.getElementById('mainForm');
+    if (form) {
+        form.addEventListener('submit', (event) => event.preventDefault());
+    }
+
     initContactLookup();
 }
 

@@ -680,6 +680,103 @@ async function searchNarrowsTheDriveTables() {
   await sleep(1000);
 }
 
+/**
+ * Enter in a search box must narrow, never submit.
+ *
+ * index.html wraps the whole page in one <form>. The Create New Client Submit was
+ * its only type="submit" button, so it was the default button -- and implicit
+ * submission fires a click on it. Pressing Enter in the client or project box
+ * therefore ran the client-creation handler and POSTed to the LIVE ESE API with
+ * every field blank, surfacing as "Error creating client: undefined".
+ *
+ * This asserts on the alert text because that is the user-visible symptom, and on
+ * the tables because Enter still has to do its actual job.
+ */
+async function enterInSearchBoxesDoesNotSubmit() {
+  const cRows = `Array.from(document.querySelectorAll('#cDriveProjects tr td:first-child')).map(td => td.textContent)`;
+  const projectBox = `document.getElementById('projectSearchInput')`;
+  const clientBox = `document.getElementById('clientInput')`;
+
+  // A REAL key event, not dispatchEvent.
+  //
+  // This matters: implicit form submission is driven by Chromium's input
+  // pipeline, and a synthetic KeyboardEvent does not trigger it. A dispatchEvent
+  // version of this test passes even with the bug fully reintroduced -- it only
+  // exercises our own keydown handler. sendInputEvent goes through the real path.
+  const pressEnter = async (selector) => {
+    await js(`${selector}.focus()`);
+    win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' });
+    win.webContents.sendInputEvent({ type: 'char', keyCode: '\r' });
+    win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Return' });
+    await sleep(900);
+  };
+
+  await js(`${clientBox}.value = 'ACME'`);
+  await js(`document.getElementById('searchButton').click()`);
+  await waitFor(`${cRows}.length > 0`, 'the project tables');
+  await sleep(600);
+
+  const before = alerts.length;
+
+  // Enter in the project box.
+  await js(`${projectBox}.value = '2020'`);
+  await js(`${projectBox}.dispatchEvent(new Event('input'))`);
+  await sleep(700);
+  await pressEnter(projectBox);
+
+  const afterProject = alerts.slice(before).join(' | ');
+  check('Enter in the project box raises no alert',
+    !/creating client/i.test(afterProject), afterProject || '(no alert)');
+  check('and narrows the list instead of submitting',
+    (await js(cRows)).join() === '2020_Zulu', (await js(cRows)).join());
+  check('and closes the suggestions',
+    (await js(`document.querySelectorAll('#projectSearchDropdown li[data-client]').length`)) === 0);
+
+  // Enter in the client box runs the search, and still must not submit.
+  await js(`document.getElementById('projectQueryClear').click()`);
+  await sleep(600);
+  await js(`${clientBox}.value = 'UPC'`);
+  await pressEnter(clientBox);
+
+  const afterClient = alerts.slice(before).join(' | ');
+  check('Enter in the client box raises no alert',
+    !/creating client/i.test(afterClient), afterClient || '(no alert)');
+  check('and searches that client',
+    (await js(cRows)).some((p) => p.startsWith('2026_')), (await js(cRows)).join());
+
+  // The structural guard. Implicit submission fires a click on the form's DEFAULT
+  // BUTTON -- the first type="submit" in it -- which is how a blank client got
+  // POSTed. No submit button means no default button, so this is the assertion
+  // that actually pins the fix, independent of any event plumbing.
+  const submitButtons = await js(
+    `Array.from(document.querySelectorAll(
+       '#mainForm button[type="submit"], #mainForm input[type="submit"], #mainForm button:not([type])'
+     )).map(b => b.id || b.textContent.trim())`
+  );
+  check('the page-wide form has no default submit button',
+    submitButtons.length === 0,
+    submitButtons.length ? `would be triggered by Enter: ${submitButtons.join(', ')}` : 'none');
+
+  // The guard itself: the form must refuse to submit even if asked directly.
+  const submitted = await js(
+    `document.getElementById('mainForm')
+       .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))`
+  );
+  check('the page-wide form refuses to submit at all',
+    submitted === false, `dispatchEvent returned ${submitted} (false means prevented)`);
+
+  const afterSubmit = alerts.slice(before).join(' | ');
+  check('and submitting it creates no client',
+    !/creating client/i.test(afterSubmit), afterSubmit || '(no alert)');
+
+  // Leave the window as found.
+  await js(`document.getElementById('projectQueryClear').click()`);
+  await sleep(400);
+  await js(`${clientBox}.value = 'ACME'`);
+  await js(`document.getElementById('searchButton').click()`);
+  await sleep(900);
+}
+
 async function invalidProjectNameIsRejected() {
   await js(`document.getElementById('newProjectName').value = 'no-year-here'`);
   const before = alerts.length;
@@ -706,6 +803,7 @@ const SCENARIOS = [
   ['the J drive path', jDriveBehaviour],
   ['project search narrows by client + project', projectSearchNarrowsByClientAndProject],
   ['project search narrows the drive tables', searchNarrowsTheDriveTables],
+  ['Enter in a search box does not submit', enterInSearchBoxesDoesNotSubmit],
   ['an invalid project name is refused', invalidProjectNameIsRejected],
 ];
 

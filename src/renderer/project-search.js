@@ -231,6 +231,20 @@ function initProjectSearch() {
         }
     }
 
+    // Enter applies the narrowing and closes the suggestions -- the tables are
+    // already filtered as you type, so there is nothing else for it to do. The
+    // preventDefault matters: this input sits inside the page-wide <form>, and
+    // Enter used to implicitly submit it. See initNewClientForm.
+    input.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        narrowTables();
+        hide();
+    });
+
     input.addEventListener('focus', refresh);
 
     // Typing narrows the tables and re-runs the suggestions. Clearing the box

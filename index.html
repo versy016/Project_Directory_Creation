@@ -180,7 +180,11 @@
         </form>
     </div>
 
-    <form>
+    <!-- This form wraps the whole page, including the Create New Client fields.
+         Nothing here is ever submitted the HTML way -- every button is wired to a
+         click handler -- so submission is blocked outright in new-client-form.
+         See the comment there: implicit submission used to POST a blank client. -->
+    <form id="mainForm">
         <table>
             <tr>
                 <td>Type:</td>
@@ -383,7 +387,9 @@
                         <input type="text" id="postcode" placeholder="Enter postcode">
                     </fieldset>
                     <div class="form-actions">
-                        <button type="submit" id="submitClientForm">Submit</button>
+                        <!-- type="button", NOT "submit": as the form's default
+                             button it was what Enter in any text box triggered. -->
+                        <button type="button" id="submitClientForm">Submit</button>
                         <button type="button" id="closeClientFormButton">Close Form</button>
                     </div>
                 </div>
@@ -406,7 +412,10 @@
         <div class="run-sync-container">
             <button type="button" id="runSyncButton">Create Folder Pairs</button>
             <button type="button" id="openfile">Open FreefileSync</button>
-            <button type="button" id="refresh">Refresh</button>
+            <!-- Restarts the app (main.js reloads the window), not just the
+                 search -- the recovery action when the in-page refresh cannot
+                 fix it, e.g. G: appearing after launch. -->
+            <button type="button" id="reload">Reload</button>
         </div>
 
         <!-- Filter and sort. Populated by src/renderer/project-filters. -->
