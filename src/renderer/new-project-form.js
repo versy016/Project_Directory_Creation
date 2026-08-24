@@ -321,12 +321,20 @@ function initNewProjectForm() {
         document.getElementById('newProjectButton').style.display = 'table-row';
     });
 
+    // The two links are one toggle: whichever mode you are NOT in is the link,
+    // and #nameSourceMode names the one you are in. Keep both in step, or the
+    // label ends up describing the wrong source.
+    function setNameSource(mode) {
+        document.getElementById('nameSourceMode').textContent = mode;
+    }
+
     document.getElementById('enterManually').addEventListener('click', function (event) {
         event.preventDefault();
         document.getElementById('newProjectName').value = `${new Date().getFullYear()}_`;
         document.getElementById('newProjectNameDropdown').classList.remove('active');
         this.style.display = 'none';
         document.getElementById('SearchProject').style.display = 'inline';
+        setNameSource('Manual entry');
     });
 
     document.getElementById('SearchProject').addEventListener('click', function (event) {
@@ -335,6 +343,7 @@ function initNewProjectForm() {
         document.getElementById('newProjectNameDropdown').classList.add('active');
         this.style.display = 'none';
         document.getElementById('enterManually').style.display = 'inline';
+        setNameSource('Search ESE quotes');
     });
 
     document.getElementById('openfile').addEventListener('click', async () => {

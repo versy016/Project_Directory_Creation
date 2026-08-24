@@ -161,7 +161,7 @@ app.on('ready', () => {
       // The two tables and the sync column must exist for anything to render.
       const missingNodes = await win.webContents.executeJavaScript(
         `['cDriveProjects','gDriveProjects','directionColumn','clientInput','btnSubmit',
-           'projectSearchInput','reload','mainForm']
+           'projectSearchInput','reload','mainForm','nameSourceMode','enterManually','SearchProject']
            .filter((id) => !document.getElementById(id))`
       );
       if (missingNodes.length) {

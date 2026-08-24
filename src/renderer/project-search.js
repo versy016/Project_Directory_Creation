@@ -305,7 +305,10 @@ function initProjectSearch() {
             if (label) {
                 label.textContent = `${labelFor(mode)}:`;
             }
-            input.placeholder = `Search for a ${labelFor(mode).toLowerCase()} by name...`;
+            // "drives" is the point of the wording: this box searches C, G and J
+            // for folders that exist. The New Project Name box below searches the
+            // ESE quotes index, which is a different set entirely.
+            input.placeholder = `Search drives for a ${labelFor(mode).toLowerCase()} by name`;
         });
     });
 }

@@ -219,20 +219,29 @@
                     <!-- Find a project when you know its name but not its client.
                          Selecting one fills in the Client field above. -->
                     <input type="text" id="projectSearchInput"
-                        placeholder="Search for a project by name...">
+                        placeholder="Search drives for a project by name">
                     <div id="projectSearchDropdown" class="dropdown-content"></div>
                 </td>
             </tr>
             <tr id="newProjectSection" style="display: none;">
                 <td colspan="2">
-                    <label id="newProjectNameid" for="newProjectName">New Project Name:</label>
+                    <!-- The label names the SOURCE this box searches -- the ESE
+                         quotes index, not the drives that the Project box above
+                         searches. The two links are the existing mode toggle,
+                         moved up from under the input so the whole choice reads
+                         as one sentence. Exactly one is visible at a time, and
+                         #nameSourceMode names whichever mode you are in. -->
+                    <label id="newProjectNameid" for="newProjectName">New Project Name</label>
+                    <span class="name-source">
+                        <span id="nameSourceMode">Search ESE quotes</span> or
+                        <a href="#" id="enterManually">Enter manually (YYYY Prefix)</a><a href="#"
+                            id="SearchProject" style="display: none;">Search ESE quotes</a>:
+                    </span>
                     <input type="text" id="newProjectName" name="newProjectName" placeholder="Start typing project name"
                         maxlength="50">
                     <div id="newProjectNameDropdown" class="dropdown-content">
                         <!-- Dropdown content here -->
                     </div>
-                    <a href="#" id="enterManually">Enter Manually (YYYY Prefix)</a>
-                    <a href="#" id="SearchProject" style="display:none; margin-bottom: 3rem;">Search Project</a>
 
                     <div id="projecttypes" style=" margin-top: 1rem">Project Type:
                         <div>
